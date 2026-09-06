@@ -35,7 +35,7 @@ References:
 """
 
 import math
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import torch
 import torch.nn as nn
@@ -352,6 +352,66 @@ class TernaryMLP(nn.Module):
             "scale_bytes": scale_bytes,
             "rmsnorm_bytes": rmsnorm_bytes,
             "total_bytes": total,
+        }
+
+    def estimate_ram_usage(self, activation_dtype_bytes: int = 2,
+                           stack_reserve: int = 128) -> Dict[str, int]:
+        """
+        Estimate peak runtime RAM usage for embedded inference.
+
+        On the ATmega328P (2048 bytes total RAM), inference needs:
+        - **Input buffer**: input_dim × dtype_bytes
+        - **Activation buffers**: two ping-pong buffers sized to the largest
+          layer dimension (current + next), so we only need max(all dims) × dtype
+        - **Scale storage**: one float32 per TernaryLinear layer
+        - **Stack reserve**: function calls, locals, serial buffer
+
+        Weights are NOT counted here — they live in flash via PROGMEM.
+
+        Args:
+            activation_dtype_bytes: Bytes per activation element. Default 2
+                (int16 fixed-point on AVR, no FPU).
+            stack_reserve: Bytes reserved for stack + serial buffer.
+
+        Returns:
+            dict with detailed RAM breakdown, total, and headroom vs 2KB.
+        """
+        all_dims = [self.input_dim] + self.hidden_dims + [self.output_dim]
+        max_dim = max(all_dims)
+
+        # Ping-pong buffers: need two buffers of max_dim to hold
+        # current-layer input and next-layer output simultaneously
+        activation_bytes = 2 * max_dim * activation_dtype_bytes
+
+        # Input buffer (feature vector from UART)
+        input_bytes = self.input_dim * activation_dtype_bytes
+
+        # Scale factors kept in RAM (one float32 per TernaryLinear layer)
+        num_ternary_layers = sum(
+            1 for m in self.modules() if isinstance(m, TernaryLinear)
+        )
+        scale_bytes = num_ternary_layers * 4
+
+        # RMSNorm gamma — on Arduino these may also be in PROGMEM,
+        # but conservatively assume RAM
+        rmsnorm_ram = sum(
+            m.gamma.numel() * 4
+            for m in self.modules() if isinstance(m, RMSNorm)
+        )
+
+        total = activation_bytes + input_bytes + scale_bytes + rmsnorm_ram + stack_reserve
+        ram_limit = 2048  # ATmega328P
+
+        return {
+            "activation_bytes": activation_bytes,
+            "input_buffer_bytes": input_bytes,
+            "scale_bytes": scale_bytes,
+            "rmsnorm_ram_bytes": rmsnorm_ram,
+            "stack_reserve": stack_reserve,
+            "total_bytes": total,
+            "ram_limit": ram_limit,
+            "headroom_bytes": ram_limit - total,
+            "fits": total <= ram_limit,
         }
 
     def extra_repr(self) -> str:

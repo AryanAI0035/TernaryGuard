@@ -15,12 +15,6 @@ import pytest
 import torch
 import torch.nn as nn
 
-# Ensure the project root is importable
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-
 from model.ternary_linear import (
     TernaryLinear,
     TernaryMLP,
@@ -389,3 +383,44 @@ class TestTernaryMLP:
         assert size_with["rmsnorm_bytes"] > 0
         assert size_without["rmsnorm_bytes"] == 0
         assert size_with["total_bytes"] > size_without["total_bytes"]
+
+    def test_quantize_paths_agree(self, seed):
+        """
+        The forward-path quantization (ternary_quantize, returns float32)
+        and the inference-path quantization (get_ternary_weights, returns int8)
+        must produce identical ternary values for the same weights.
+
+        If someone modifies one path but not the other, this test catches
+        the silent divergence before it propagates to cross-engine validation.
+        """
+        layer = TernaryLinear(32, 16)
+
+        # Forward path (via autograd function)
+        w_q_forward, scale_forward = ternary_quantize(layer.weight)
+        w_q_forward_int = w_q_forward.detach().to(torch.int8)
+
+        # Inference path (standalone reimplementation)
+        w_q_inference, scale_inference = layer.get_ternary_weights()
+
+        # Values must agree exactly
+        assert torch.equal(w_q_forward_int, w_q_inference), (
+            "Forward and inference quantization paths disagree!"
+        )
+        assert scale_forward.item() == pytest.approx(scale_inference, abs=1e-6), (
+            f"Scales disagree: forward={scale_forward.item()}, inference={scale_inference}"
+        )
+
+    def test_ram_fits_2kb(self, seed):
+        """
+        The target architecture must fit within ATmega328P's 2KB RAM.
+        This tests the binding constraint (RAM), not just flash.
+        """
+        model = TernaryMLP(20, [16, 8], 2)
+        ram = model.estimate_ram_usage()
+
+        assert ram["fits"], (
+            f"Model needs {ram['total_bytes']} bytes RAM but limit is {ram['ram_limit']}"
+        )
+        assert ram["headroom_bytes"] > 0
+        assert ram["total_bytes"] > 0
+

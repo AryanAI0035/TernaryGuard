@@ -1,0 +1,21 @@
+# TernaryGuard Python Dependencies
+# Environment: Python 3.10+
+# Install: pip install -r requirements.txt
+
+# ──────────────── Core ML ────────────────
+torch>=2.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# ──────────────── Dashboard Backend ────────────────
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+websockets>=11.0
+pyserial>=3.5
+
+# ──────────────── Utilities ────────────────
+tqdm>=4.65.0
+pyyaml>=6.0

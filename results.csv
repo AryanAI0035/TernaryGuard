@@ -1,0 +1,1 @@
+phase,experiment,model_type,architecture,hidden_dims,num_params,accuracy,precision,recall,f1_score,model_size_bytes,inference_latency_us,flash_bytes,ram_bytes,lut_count,ff_count,dsp_count,bram_count,power_mw,clock_mhz,notes

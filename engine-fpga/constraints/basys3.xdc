@@ -16,9 +16,9 @@ create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clk
 set_property -dict { PACKAGE_PIN U18  IOSTANDARD LVCMOS33 } [get_ports rst]
 
 ## ──────────────── UART ────────────────
-## USB-UART bridge (directly usable if board were connected)
-set_property -dict { PACKAGE_PIN A18  IOSTANDARD LVCMOS33 } [get_ports uart_rx]
-set_property -dict { PACKAGE_PIN A17  IOSTANDARD LVCMOS33 } [get_ports uart_tx]
+## USB-UART bridge (per Digilent master XDC: RsRx=B18, RsTx=A18)
+set_property -dict { PACKAGE_PIN B18  IOSTANDARD LVCMOS33 } [get_ports uart_rx]
+set_property -dict { PACKAGE_PIN A18  IOSTANDARD LVCMOS33 } [get_ports uart_tx]
 
 ## ──────────────── Status LEDs ────────────────
 ## LED[0]: inference active, LED[1]: classification result

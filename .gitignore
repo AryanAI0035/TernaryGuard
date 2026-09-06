@@ -22,11 +22,11 @@ conda-env/
 .ipynb_checkpoints/
 *.ipynb_metadata/
 
-# PyTorch checkpoints (track selectively)
+# PyTorch checkpoints — DO NOT commit to git (bloats repo history)
+# Final trained model goes in a GitHub Release, not in the tree.
 *.pt
 *.pth
 *.ckpt
-!model/checkpoints/.gitkeep
 
 # ──────────────── C / AVR ────────────────
 *.o

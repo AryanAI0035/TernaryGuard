@@ -210,6 +210,45 @@ def plot_power_comparison(df: pd.DataFrame, output_dir: Path) -> None:
     print("  ✓ power_comparison.png")
 
 
+def plot_ablation_sweep(df: pd.DataFrame, output_dir: Path) -> None:
+    """Line plot: F1 score vs hidden layer width for each quantization type (Phase 3.3)."""
+    phase3 = df[df["phase"] == 3]
+    if phase3.empty or "hidden_dims" not in phase3.columns:
+        print("  Skipping ablation plot — no Phase 3 data yet.")
+        return
+
+    # Need multiple hidden_dims entries to make a sweep plot
+    ablation = phase3[phase3["hidden_dims"].notna() & phase3["f1_score"].notna()]
+    if len(ablation) < 2:
+        print("  Skipping ablation plot — need ≥2 hidden_dims entries for a sweep.")
+        return
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    for model_type in ["fp32", "int8", "ternary"]:
+        subset = ablation[ablation["model_type"] == model_type].sort_values("hidden_dims")
+        if not subset.empty:
+            ax.plot(
+                subset["hidden_dims"].astype(str),
+                subset["f1_score"],
+                marker="o",
+                linewidth=2,
+                markersize=8,
+                label=model_type.upper(),
+                color=COLORS.get(model_type, "#999"),
+            )
+
+    ax.set_xlabel("Hidden Layer Width")
+    ax.set_ylabel("F1 Score")
+    ax.set_ylim(0, 1.05)
+    ax.legend()
+    ax.set_title("TernaryGuard — Architecture Ablation (Hidden Width Sweep)", fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(output_dir / "ablation_sweep.png", bbox_inches="tight")
+    plt.close(fig)
+    print("  ✓ ablation_sweep.png")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Plot TernaryGuard experiment results")
     parser.add_argument("--phase", type=int, help="Filter to a specific phase")
@@ -235,6 +274,7 @@ def main():
         df = df[df["phase"] == args.phase]
 
     plot_accuracy_vs_quantization(df, output_dir)
+    plot_ablation_sweep(df, output_dir)
     plot_latency_comparison(df, output_dir)
     plot_resource_usage(df, output_dir)
     plot_power_comparison(df, output_dir)

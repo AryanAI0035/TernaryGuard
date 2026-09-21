@@ -1,0 +1,111 @@
+# TernaryGuard — Model Architecture & Memory Budget
+
+## Architecture Decision
+
+Based on the N-BaIoT dataset (115 features → reduced to 20 via feature selection)
+and the ATmega328P hardware constraints (32KB flash, 2KB RAM, 16MHz, no FPU):
+
+### Final Architecture
+
+```
+Input(20) → RMSNorm(20) → TernaryLinear(20, 32) → ReLU
+          → RMSNorm(32) → TernaryLinear(32, 16) → ReLU
+          → TernaryLinear(16, 11)  [classifier, 11 classes]
+```
+
+**Why this shape:**
+- **20 input features**: Feature selection reduces 115 → 20 via mutual information ranking
+- **32 → 16 hidden**: Wide-then-narrow captures complex attack patterns in first layer, compresses in second
+- **11 output classes**: benign + 5 Mirai attacks + 5 BASHLITE attacks
+- **RMSNorm before each hidden layer**: Keeps activations scaled for ternary weights
+- **No RMSNorm before classifier**: Final layer operates on already-normalized features
+
+### Parameter Count
+
+| Layer | Weights | Bias | RMSNorm γ |
+|-------|---------|------|-----------|
+| TernaryLinear(20, 32) | 640 | 32 | 20 |
+| TernaryLinear(32, 16) | 512 | 16 | 32 |
+| TernaryLinear(16, 11) | 176 | 11 | — |
+| **Total** | **1328** | **59** | **52** |
+
+### Flash Budget (32,768 bytes)
+
+| Component | Bytes | Calculation |
+|-----------|-------|-------------|
+| Ternary weights (packed) | 263 | ⌈1328 × 1.58 / 8⌉ |
+| Biases (int8) | 59 | 59 × 1 |
+| Scale factors (float32) | 12 | 3 layers × 4 |
+| RMSNorm gamma (float32) | 208 | 52 × 4 |
+| **Model total** | **542** | |
+| Inference engine code | ~8,000 | Estimated C code + Arduino overhead |
+| Arduino bootloader | ~2,048 | |
+| Serial/UART driver | ~1,500 | |
+| **Grand total** | **~12,090** | **36.9% of 32KB** ✅ |
+
+### RAM Budget (2,048 bytes)
+
+| Component | Bytes | Calculation |
+|-----------|-------|-------------|
+| Activation buffers (ping-pong) | 128 | 2 × 32 × 2 (int16, max hidden dim) |
+| Input buffer | 40 | 20 × 2 (int16 features from UART) |
+| Scale factors | 12 | 3 × 4 (float32) |
+| RMSNorm gamma | 208 | 52 × 4 (float32, conservative) |
+| Stack reserve | 128 | Function calls, locals |
+| Serial buffer | 64 | UART RX buffer |
+| **Grand total** | **580** | **28.3% of 2KB** ✅ |
+
+### Compared to Phase 1 Example (20→16→8→2)
+
+| Metric | Phase 1 (20→16→8→2) | Phase 2 (20→32→16→11) |
+|--------|---------------------|----------------------|
+| Ternary weights | 464 | 1,328 |
+| Flash (model only) | 274 B | 542 B |
+| RAM (runtime) | ~360 B | ~580 B |
+| Output classes | 2 | 11 |
+| Capacity | Minimal | Production-ready |
+
+**Both fit comfortably.** The larger architecture gives us the capacity to distinguish
+11 classes while staying well under both constraints.
+
+## Dataset Summary: N-BaIoT
+
+| Property | Value |
+|----------|-------|
+| Source | UCI ML Repository / Kaggle |
+| Total instances | 7,062,606 |
+| Features | 115 behavioral (→ reduced to 20) |
+| IoT devices | 9 |
+| Attack types | 10 (5 Mirai + 5 BASHLITE) |
+| Classes | 11 (benign + 10 attacks) |
+| Missing values | None |
+| Feature type | Real (continuous) |
+
+### Feature Selection Strategy
+
+Using **mutual information** against the multi-class labels to rank all 115 features,
+then selecting the top 20. This method:
+1. Captures non-linear dependencies (unlike correlation-based methods)
+2. Is label-aware (unlike variance-based methods)
+3. Produces a fixed, interpretable feature set for embedded deployment
+
+The selected feature indices are saved to `model/feature_config.json` and used by:
+- The C software engine (Phase 4)
+- The Arduino engine (Phase 5) 
+- The FPGA engine (Phase 6) — hardcoded in Verilog
+
+### Preprocessing
+
+- **StandardScaler**: zero-mean, unit-variance normalization
+- Scaler parameters (mean, scale per feature) saved to `feature_config.json`
+- On Arduino: scaler is applied in int16 fixed-point arithmetic
+
+### Data Splits
+
+| Split | Proportion | Purpose |
+|-------|-----------|---------|
+| Train | 70% | Model training |
+| Validation | 10% | Hyperparameter tuning, early stopping |
+| Test | 20% | Final evaluation, cross-engine validation |
+
+All splits are **stratified** to maintain class balance.

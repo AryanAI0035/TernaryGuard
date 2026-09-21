@@ -45,15 +45,16 @@ Input(20) → RMSNorm(20) → TernaryLinear(20, 32) → ReLU
 
 ### RAM Budget (2,048 bytes)
 
-| Component | Bytes | Calculation |
-|-----------|-------|-------------|
-| Activation buffers (ping-pong) | 128 | 2 × 32 × 2 (int16, max hidden dim) |
-| Input buffer | 40 | 20 × 2 (int16 features from UART) |
-| Scale factors | 12 | 3 × 4 (float32) |
-| RMSNorm gamma | 208 | 52 × 4 (float32, conservative) |
-| Stack reserve | 128 | Function calls, locals |
-| Serial buffer | 64 | UART RX buffer |
-| **Grand total** | **580** | **28.3% of 2KB** ✅ |
+| Component | Bytes | Calculation | Source |
+|-----------|-------|-------------|--------|
+| Activation buffers (ping-pong) | 128 | 2 × 32 × 2 (int16, max hidden dim) | `estimate_ram_usage()` |
+| Input buffer | 40 | 20 × 2 (int16 features from UART) | `estimate_ram_usage()` |
+| Scale factors | 12 | 3 × 4 (float32) | `estimate_ram_usage()` |
+| RMSNorm gamma | 208 | (20 + 32) × 4 (float32, conservative) | `estimate_ram_usage()` |
+| Stack reserve | 128 | Function calls, locals | `estimate_ram_usage()` |
+| **Model subtotal** | **516** | | **Code-verified** |
+| Serial buffer (Arduino runtime) | 64 | UART RX buffer | Manual estimate |
+| **Grand total** | **580** | **28.3% of 2KB** ✅ | |
 
 ### Compared to Phase 1 Example (20→16→8→2)
 

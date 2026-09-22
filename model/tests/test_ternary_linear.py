@@ -332,7 +332,7 @@ class TestTernaryMLP:
         )
 
         # Packed weight bytes should be < raw weight count
-        # (since 1.58 bits < 8 bits)
+        # (since 2 bits < 8 bits per weight)
         assert size["packed_weight_bytes"] < size["ternary_weights"]
 
     def test_no_rmsnorm(self, seed):

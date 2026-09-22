@@ -1,0 +1,91 @@
+\documentclass[11pt,twoside,openright]{book}
+
+\usepackage{preamble}
+
+\title{The Information-Theoretic Foundations of Deep Learning}
+\author{Antigravity}
+\date{\today}
+
+\begin{document}
+
+\frontmatter
+\maketitle
+
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+
+Most treatments of information theory and deep learning are either a classical IT textbook with no DL, or a DL paper with a paragraph of IT hand-waved in for flavor. No existing book walks the full chain from Shannon's 1948 theorems to why a transformer compresses the way it does, in one rigorous, forward-looking narrative. This book is that synthesis.
+
+We build upon this positioning by taking a first-principles approach. Representation learning is fundamentally about extracting the actionable signal from the noise of the physical world. While early chapters lay the rigorous bedrock of entropy, divergence, and optimal codes, the narrative swiftly pivots to the architecture of modern neural networks. We ask: when a neural network discards information, does it do so optimally according to the Information Bottleneck? When a diffusion model reverses noise, how does this relate to the entropy production of nonequilibrium thermodynamics? 
+
+Through a tripartite structure in every chapter---Descriptive, Mathematical, and Horizon---we ensure that intuition grounds the mathematics, and the mathematics secures the intuition, before finally gazing out toward the frontier of open problems.
+
+\input{notation}
+
+\tableofcontents
+
+\mainmatter
+
+\part{Foundations of Information Theory}
+\include{chapters/01_entropy.tex}
+\include{chapters/02_joint_entropy.tex}
+\include{chapters/03_mutual_info.tex}
+\include{chapters/04_divergence.tex}
+
+\part{Deep Learning as Representation}
+\include{chapters/05_manifold.tex}
+\include{chapters/06_markov_chains.tex}
+\include{chapters/07_sufficient_stats.tex}
+
+\part{The Information Bottleneck}
+\include{chapters/08_information_bottleneck.tex}
+\include{chapters/09_compression_bounds.tex}
+\include{chapters/10_learning_dynamics.tex}
+\include{chapters/11_compression_critiques.tex}
+
+\part{Variational Inference and Autoencoders}
+\include{chapters/12_elbo.tex}
+\include{chapters/13_vae.tex}
+\include{chapters/14_beta_vae.tex}
+\include{chapters/15_rate_distortion.tex}
+
+\part{Contrastive Learning and Mutual Information Estimation}
+\include{chapters/16_mine.tex}
+\include{chapters/17_infonce.tex}
+\include{chapters/18_simclr.tex}
+\include{chapters/19_barlow_twins.tex}
+\include{chapters/20_clip.tex}
+
+\part{Divergences and Adversarial Networks}
+\include{chapters/21_ipm.tex}
+\include{chapters/22_gan.tex}
+\include{chapters/23_f_divergence.tex}
+\include{chapters/24_optimal_transport.tex}
+
+\part{Score Matching and Diffusion Models}
+\include{chapters/25_score_matching.tex}
+\include{chapters/26_langevin.tex}
+\include{chapters/27_ddpm.tex}
+\include{chapters/28_sde.tex}
+
+\part{Information Geometry}
+\include{chapters/29_fisher_info.tex}
+\include{chapters/30_natural_gradient.tex}
+\include{chapters/31_geodesics.tex}
+
+\part{Minimum Description Length}
+\include{chapters/32_kolmogorov.tex}
+\include{chapters/33_mdl.tex}
+\include{chapters/34_prequential.tex}
+
+\part{Empirical Demonstrations (Python)}
+\include{chapters/35_mi_estimators.tex}
+\include{chapters/36_info_plane.tex}
+\include{chapters/37_ib_loop.tex}
+\include{chapters/38_reproduce_plots.tex}
+
+\backmatter
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

@@ -312,10 +312,10 @@ class TernaryMLP(nn.Module):
         """
         Estimate the packed model size in bytes for embedded deployment.
 
-        Ternary weights need ~1.58 bits each (log₂3). In practice we pack
-        5 trits into 8 bits (3⁵ = 243 < 256), giving exactly 1.6 bits/weight.
-        For a conservative hand-calculation we use the information-theoretic
-        lower bound of 1.58 bits.
+        Ternary weights are packed at 2 bits each (4 trits per byte).
+        Encoding: 00 = 0, 01 = +1, 10 = -1, 11 = unused.
+        This is slightly less dense than the information-theoretic minimum
+        of log₂3 ≈ 1.58 bits, but trivial to encode/decode in C and Verilog.
 
         Biases are stored as int8 on the embedded target (1 byte each).
         Scale factors are float32 (4 bytes each, one per TernaryLinear layer).
@@ -338,7 +338,7 @@ class TernaryMLP(nn.Module):
             elif isinstance(module, RMSNorm):
                 rmsnorm_param_count += module.gamma.numel()
 
-        packed_weight_bytes = math.ceil(ternary_weight_count * 1.58 / 8)
+        packed_weight_bytes = math.ceil(ternary_weight_count * 2 / 8)
         bias_bytes = bias_count  # int8 on embedded
         scale_bytes = scale_count * 4  # float32
         rmsnorm_bytes = rmsnorm_param_count * 4  # float32 gamma

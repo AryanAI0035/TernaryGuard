@@ -33,15 +33,15 @@ Input(20) → RMSNorm(20) → TernaryLinear(20, 32) → ReLU
 
 | Component | Bytes | Calculation |
 |-----------|-------|-------------|
-| Ternary weights (packed) | 263 | ⌈1328 × 1.58 / 8⌉ |
+| Ternary weights (packed, 2-bit) | 332 | ⌈1328 × 2 / 8⌉ |
 | Biases (int8) | 59 | 59 × 1 |
 | Scale factors (float32) | 12 | 3 layers × 4 |
-| RMSNorm gamma (float32) | 208 | 52 × 4 |
-| **Model total** | **542** | |
+| RMSNorm gamma (float32) | 208 | (20 + 32) × 4 |
+| **Model total** | **611** | |
 | Inference engine code | ~8,000 | Estimated C code + Arduino overhead |
 | Arduino bootloader | ~2,048 | |
 | Serial/UART driver | ~1,500 | |
-| **Grand total** | **~12,090** | **36.9% of 32KB** ✅ |
+| **Grand total** | **~12,159** | **37.1% of 32KB** ✅ |
 
 ### RAM Budget (2,048 bytes)
 
@@ -61,8 +61,8 @@ Input(20) → RMSNorm(20) → TernaryLinear(20, 32) → ReLU
 | Metric | Phase 1 (20→16→8→2) | Phase 2 (20→32→16→11) |
 |--------|---------------------|----------------------|
 | Ternary weights | 464 | 1,328 |
-| Flash (model only) | 274 B | 542 B |
-| RAM (runtime) | ~360 B | ~580 B |
+| Flash (model only) | 298 B | 611 B |
+| RAM (runtime) | ~404 B | ~580 B |
 | Output classes | 2 | 11 |
 | Capacity | Minimal | Production-ready |
 

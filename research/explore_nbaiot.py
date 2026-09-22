@@ -790,7 +790,7 @@ def print_summary_table(
         rm = m_dict["ram"]
         print(f"Model Architecture: {m_dict['architecture']} ({label})")
         print(f"  - Ternary weights:                 {fl['ternary_weights']:>5} weights")
-        print(f"  - Packed weight storage (1.58b):   {fl['packed_weight_bytes']:>5} bytes (in Flash via PROGMEM)")
+        print(f"  - Packed weight storage (2b):      {fl['packed_weight_bytes']:>5} bytes (in Flash via PROGMEM)")
         print(f"  - Total Flash required:            {fl['total_bytes']:>5} bytes ({fl['total_bytes']/32768*100:>4.2f}% of 32KB Flash)")
         print(f"  - Peak runtime RAM required:       {rm['total_bytes']:>5} bytes ({rm['total_bytes']/2048*100:>4.2f}% of 2KB RAM)")
         print(f"    * Ping-pong activation buffers:  {rm['activation_bytes']:>5} bytes")

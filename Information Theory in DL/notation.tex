@@ -1,0 +1,24 @@
+\chapter*{Notation}
+\addcontentsline{toc}{chapter}{Notation}
+
+\section*{Information Theory}
+\begin{itemize}
+    \item $H(X)$: Shannon entropy of a discrete random variable $X$.
+    \item $h(X)$: Differential entropy of a continuous random variable $X$.
+    \item $H(X|Y)$: Conditional entropy of $X$ given $Y$.
+    \item $I(X; Y)$: Mutual information between $X$ and $Y$.
+    \item $D_{\text{KL}}(P \parallel Q)$: Kullback-Leibler divergence from distribution $P$ to $Q$.
+    \item $H(P, Q)$: Cross-entropy between distributions $P$ and $Q$.
+\end{itemize}
+
+\section*{Deep Learning}
+\begin{itemize}
+    \item $\mathcal{X}, \mathcal{Y}$: Input space and label space.
+    \item $\mathcal{D}$: A dataset of pairs $(x_i, y_i) \sim P_{\text{data}}$.
+    \item $f_\theta$: A neural network parameterized by $\theta$.
+    \item $\mathcal{L}(\theta)$: Loss function.
+    \item $z$: Latent representation or embedding of $x$.
+    \item $q_\phi(z|x)$: Encoder (inference model) parameterized by $\phi$.
+    \item $p_\theta(x|z)$: Decoder (generative model) parameterized by $\theta$.
+    \item $\beta$: Trade-off parameter (e.g., in $\beta$-VAE or Information Bottleneck).
+\end{itemize}

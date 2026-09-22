@@ -107,7 +107,7 @@ For a model with $N$ ternary weights:
 
 | Component | Bits per element | Bytes |
 |:---|:---:|:---:|
-| Ternary weights | 1.58 | $\lceil N \times 1.58 / 8 \rceil$ |
+| Ternary weights (2-bit packed) | 2 | $\lceil N \times 2 / 8 \rceil$ |
 | Bias (int8) | 8 | $B$ (number of biases) |
 | Scale factors (float32) | 32 | $4 \times L$ (number of layers) |
 | RMSNorm gamma (float32) | 32 | $4 \times D$ (total feature dims) |
@@ -115,11 +115,11 @@ For a model with $N$ ternary weights:
 **Example** — the planned TernaryGuard architecture:
 - Input(20) → Hidden(16) → Hidden(8) → Output(2)
 - Ternary weights: $20 \times 16 + 16 \times 8 + 8 \times 2 = 464$
-- Packed: $\lceil 464 \times 1.58 / 8 \rceil = 92$ bytes
+- Packed (2 bits each): $\lceil 464 \times 2 / 8 \rceil = 116$ bytes
 - Bias: $16 + 8 + 2 = 26$ bytes (int8)
 - Scales: $3 \times 4 = 12$ bytes
 - RMSNorm gamma: $(20 + 16) \times 4 = 144$ bytes
-- **Total: 274 bytes** — well within the 32KB flash / 2KB RAM constraints of the ATmega328P.
+- **Total: 298 bytes** — well within the 32KB flash / 2KB RAM constraints of the ATmega328P.
 
 ## 6. What the Unit Tests Verify
 

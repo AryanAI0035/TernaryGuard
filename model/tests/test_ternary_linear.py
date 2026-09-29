@@ -424,3 +424,71 @@ class TestTernaryMLP:
         assert ram["headroom_bytes"] > 0
         assert ram["total_bytes"] > 0
 
+    def test_pack_ternary_2bit_roundtrip(self, seed):
+        """
+        Packing and unpacking must be lossless.
+        Encoding: 0b00=0, 0b01=+1, 0b10=-1.
+        """
+        import numpy as np
+        model = TernaryMLP(20, [16, 8], 2)
+
+        for module in model.modules():
+            if isinstance(module, TernaryLinear):
+                w_ternary, _ = module.get_ternary_weights()
+                w_np = w_ternary.numpy()
+                packed = TernaryMLP._pack_ternary_2bit(w_np)
+
+                # Unpack and verify round-trip
+                flat_original = w_np.flatten()
+                unpacked = []
+                for byte_val in packed:
+                    for j in range(4):
+                        code = (byte_val >> (j * 2)) & 0x03
+                        if code == 0b01:
+                            unpacked.append(1)
+                        elif code == 0b10:
+                            unpacked.append(-1)
+                        else:
+                            unpacked.append(0)
+
+                # Trim to original length (last byte may have padding)
+                unpacked = unpacked[:len(flat_original)]
+                assert np.array_equal(flat_original, np.array(unpacked, dtype=np.int8)), \
+                    "2-bit pack/unpack round-trip failed"
+                break  # Only need to test one layer
+
+    def test_export_weights_header(self, seed, tmp_path):
+        """
+        export_weights_header() must produce a valid C header file with
+        the canonical encoding spec comment and correct architecture defines.
+        """
+        model = TernaryMLP(20, [16, 8], 2)
+        out_path = str(tmp_path / "test_weights.h")
+        model.export_weights_header(path=out_path)
+
+        with open(out_path, 'r') as f:
+            content = f.read()
+
+        # Must contain the canonical encoding spec
+        assert "0b00 = 0" in content
+        assert "0b01 = +1" in content
+        assert "0b10 = -1" in content
+
+        # Must contain architecture defines
+        assert "#define TG_INPUT_DIM  20" in content
+        assert "#define TG_OUTPUT_DIM 2" in content
+        assert "#define TG_NUM_LAYERS 3" in content
+
+        # Must contain include guard
+        assert "#ifndef TERNARYGUARD_MODEL_WEIGHTS_H" in content
+        assert "#endif" in content
+
+        # Must contain weight arrays for all 3 layers
+        assert "tg_weights_0" in content
+        assert "tg_weights_1" in content
+        assert "tg_weights_2" in content
+
+        # Must contain PROGMEM ifdef
+        assert "TGPROGMEM" in content
+        assert "__AVR__" in content
+

@@ -462,6 +462,8 @@ class TestTernaryMLP:
         export_weights_header() must produce a valid C header file with
         the canonical encoding spec comment and correct architecture defines.
         """
+        from model.ternary_linear import TRIT_ENCODING_SPEC_LINES
+
         model = TernaryMLP(20, [16, 8], 2)
         out_path = str(tmp_path / "test_weights.h")
         model.export_weights_header(path=out_path)
@@ -469,10 +471,16 @@ class TestTernaryMLP:
         with open(out_path, 'r') as f:
             content = f.read()
 
-        # Must contain the canonical encoding spec
-        assert "0b00 = 0" in content
-        assert "0b01 = +1" in content
-        assert "0b10 = -1" in content
+        # Must contain every line from the SINGLE source of truth constant
+        for spec_line in TRIT_ENCODING_SPEC_LINES:
+            if spec_line.strip():  # skip empty lines
+                assert spec_line.strip() in content, (
+                    f"Missing from generated header: '{spec_line}'"
+                )
+
+        # Must say LSB-first, NOT MSB-first
+        assert "LSB-first" in content
+        assert "MSB-first" not in content
 
         # Must contain architecture defines
         assert "#define TG_INPUT_DIM  20" in content

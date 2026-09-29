@@ -28,7 +28,7 @@ Quantization method (BitNet b1.58 style):
     No multiplication is needed in the inner loop — only add, subtract, skip.
 
 2-bit packed encoding (CANONICAL — used by all engines):
-    Each ternary weight is stored as 2 bits, 4 trits per byte, MSB-first:
+    Each ternary weight is stored as 2 bits, 4 trits per byte, LSB-first:
         0b00 = 0   (skip)
         0b01 = +1  (add)
         0b10 = -1  (subtract)
@@ -57,6 +57,28 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+# ── Single source of truth for the 2-bit encoding ──────────────────────
+# This constant is used verbatim by export_weights_header() to generate
+# the comment block in model_weights.h. Do NOT hand-duplicate this text
+# elsewhere — reference this constant instead.
+TRIT_ENCODING_SPEC_LINES = [
+    "2-BIT PACKED ENCODING (CANONICAL):",
+    "  Each ternary weight is stored as 2 bits, 4 trits per byte, LSB-first.",
+    "    0b00 = 0   (skip: do not accumulate)",
+    "    0b01 = +1  (add:  accumulate +x_i)",
+    "    0b10 = -1  (sub:  accumulate -x_i)",
+    "    0b11 = reserved (unused, treat as 0)",
+    "",
+    "  Byte layout: [trit3 : trit2 : trit1 : trit0]",
+    "  trit0 occupies bits [1:0], trit3 occupies bits [7:6].",
+    "",
+    "  To decode trit i from byte b:",
+    "    uint8_t code = (b >> (i * 2)) & 0x03;",
+    "    int8_t  trit = (code == 0x01) ? +1 : (code == 0x02) ? -1 : 0;",
+    "",
+    "  This encoding is shared by engine-arduino (C) and engine-fpga (Verilog).",
+    "  Any change here MUST be mirrored in both engines.",
+]
 
 # ---------------------------------------------------------------------------
 # Quantization primitives
@@ -436,7 +458,8 @@ class TernaryMLP(nn.Module):
 
         The header includes:
         - The canonical 2-bit encoding spec as a comment block
-        - Packed weight arrays (4 trits per byte, MSB-first)
+          (generated from TRIT_ENCODING_SPEC_LINES, not hand-duplicated)
+        - Packed weight arrays (4 trits per byte, LSB-first)
         - Bias arrays (int8)
         - Scale factors (float32)
         - RMSNorm gamma arrays (float32)
@@ -459,22 +482,9 @@ class TernaryMLP(nn.Module):
         lines.append(" *")
         lines.append(" * DO NOT EDIT MANUALLY. Re-generate from the trained model checkpoint.")
         lines.append(" *")
-        lines.append(" * 2-BIT PACKED ENCODING (CANONICAL):")
-        lines.append(" *   Each ternary weight is stored as 2 bits, 4 trits per byte, MSB-first.")
-        lines.append(" *     0b00 = 0   (skip: do not accumulate)")
-        lines.append(" *     0b01 = +1  (add:  accumulate +x_i)")
-        lines.append(" *     0b10 = -1  (sub:  accumulate -x_i)")
-        lines.append(" *     0b11 = reserved (unused, treat as 0)")
-        lines.append(" *")
-        lines.append(" *   Byte layout: [trit3 : trit2 : trit1 : trit0]")
-        lines.append(" *   trit0 occupies bits [1:0], trit3 occupies bits [7:6].")
-        lines.append(" *")
-        lines.append(" *   To decode trit i from byte b:")
-        lines.append(" *     uint8_t code = (b >> (i * 2)) & 0x03;")
-        lines.append(" *     int8_t  trit = (code == 0x01) ? +1 : (code == 0x02) ? -1 : 0;")
-        lines.append(" *")
-        lines.append(" *   This encoding is shared by engine-arduino (C) and engine-fpga (Verilog).")
-        lines.append(" *   Any change here MUST be mirrored in both engines.")
+        # Emit encoding spec from the single source of truth
+        for spec_line in TRIT_ENCODING_SPEC_LINES:
+            lines.append(f" * {spec_line}" if spec_line else " *")
         lines.append(" */")
         lines.append("")
         lines.append("#ifndef TERNARYGUARD_MODEL_WEIGHTS_H")
@@ -556,10 +566,10 @@ class TernaryMLP(nn.Module):
         """
         Pack a 2D ternary weight matrix into 2-bit encoded bytes.
 
-        Encoding per the canonical spec:
+        Encoding per TRIT_ENCODING_SPEC_LINES (the single source of truth):
             0b00 = 0, 0b01 = +1, 0b10 = -1
 
-        4 trits per byte, trit0 in bits [1:0], trit3 in bits [7:6].
+        4 trits per byte, LSB-first: trit0 in bits [1:0], trit3 in bits [7:6].
         Weights are flattened in row-major order.
 
         Args:

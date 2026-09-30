@@ -63,9 +63,13 @@ CHECKPOINTS_DIR = PROJECT_ROOT / "checkpoints"
 # ─────────────────────── FP32 Baseline MLP ───────────────────────────
 
 class FP32MLP(nn.Module):
-    """Standard full-precision MLP for baseline comparison."""
+    """
+    Full-precision MLP baseline with RMSNorm — architecturally identical
+    to TernaryMLP so the comparison isolates precision, not normalization.
+    """
 
-    def __init__(self, input_dim: int, hidden_dims: List[int], output_dim: int):
+    def __init__(self, input_dim: int, hidden_dims: List[int], output_dim: int,
+                 use_rmsnorm: bool = True):
         super().__init__()
         self.input_dim = input_dim
         self.hidden_dims = hidden_dims
@@ -74,6 +78,8 @@ class FP32MLP(nn.Module):
         layers = []
         prev_dim = input_dim
         for h in hidden_dims:
+            if use_rmsnorm:
+                layers.append(RMSNorm(prev_dim))
             layers.append(nn.Linear(prev_dim, h))
             layers.append(nn.ReLU())
             prev_dim = h
@@ -88,7 +94,7 @@ class FP32MLP(nn.Module):
         return {"total": total, "ternary": 0}
 
     def model_size_bytes(self) -> int:
-        """Total bytes for FP32 storage (weights + biases as float32)."""
+        """Total bytes for FP32 storage (all parameters as float32)."""
         return sum(p.numel() * 4 for p in self.parameters())
 
 
@@ -267,7 +273,7 @@ class INT8MLP(nn.Module):
         return self.network(x)
 
     def model_size_bytes(self) -> int:
-        """INT8 weights (1 byte each) + FP32 biases (4 bytes each) + scales."""
+        """INT8 weights (1B) + FP32 biases (4B) + scales + RMSNorm gamma (4B)."""
         size = 0
         for module in self.network.modules():
             if isinstance(module, nn.Linear):
@@ -275,6 +281,8 @@ class INT8MLP(nn.Module):
                 if module.bias is not None:
                     size += module.bias.numel() * 4  # float32 bias
                 size += 4  # float32 scale per layer
+            elif isinstance(module, RMSNorm):
+                size += module.gamma.numel() * 4     # float32 gamma
         return size
 
 

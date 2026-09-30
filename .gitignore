@@ -98,3 +98,6 @@ logs/
 *.log
 .pytest_cache/
 Information Theory in DL/
+checkpoints/
+data/
+model_weights.h

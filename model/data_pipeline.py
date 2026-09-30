@@ -341,7 +341,7 @@ class NBaIoTDataset:
         """
         os.makedirs(os.path.dirname(path), exist_ok=True)
         config = {
-            'selected_features': feature_indices,
+            'selected_features': [int(i) for i in feature_indices],
             'scaler': {
                 'mean': self.scaler.mean_.tolist(),
                 'scale': self.scaler.scale_.tolist()

@@ -500,3 +500,76 @@ class TestTernaryMLP:
         assert "TGPROGMEM" in content
         assert "__AVR__" in content
 
+    def test_pack_row_major_not_transposed(self, seed):
+        """
+        _pack_ternary_2bit uses numpy flatten(order='C') = row-major.
+        This test uses a non-square, asymmetric 3×2 matrix where
+        row-major and column-major produce different byte values.
+
+        Matrix:
+            [[ 1, -1],
+             [ 0,  1],
+             [-1,  0]]
+
+        Row-major flatten: [1, -1, 0, 1, -1, 0]
+          byte0: trit0=1→01, trit1=-1→10, trit2=0→00, trit3=1→01
+                 = 0b01_00_10_01 = 0x49
+          byte1: trit0=-1→10, trit1=0→00, pad, pad
+                 = 0b00_00_00_10 = 0x02
+
+        Column-major would flatten to [1, 0, -1, -1, 1, 0]:
+          byte0 would be 0b10_10_00_01 = 0xA1 (different!)
+        """
+        import numpy as np
+        w = np.array([[ 1, -1],
+                      [ 0,  1],
+                      [-1,  0]], dtype=np.int8)
+
+        packed = TernaryMLP._pack_ternary_2bit(w)
+
+        assert len(packed) == 2, f"Expected 2 bytes for 6 trits, got {len(packed)}"
+        assert packed[0] == 0x49, (
+            f"Byte 0 should be 0x49 (row-major), got 0x{packed[0]:02X}. "
+            f"0xA1 would indicate column-major traversal."
+        )
+        assert packed[1] == 0x02, (
+            f"Byte 1 should be 0x02, got 0x{packed[1]:02X}"
+        )
+
+    def test_decode_matches_spec_snippet(self, seed):
+        """
+        The C decode snippet in TRIT_ENCODING_SPEC_LINES claims:
+            uint8_t code = (b >> (i * 2)) & 0x03;
+            int8_t  trit = (code == 0x01) ? +1 : (code == 0x02) ? -1 : 0;
+
+        This test packs known values, then decodes using that exact logic
+        in Python, proving the hand-typed C snippet is consistent with the
+        actual _pack_ternary_2bit() packer. A roundtrip test can't catch
+        this if pack and unpack are both wrong in the same way.
+        """
+        import numpy as np
+
+        # Known input: every possible trit value in a specific order
+        w = np.array([[ 1, -1, 0, 1],
+                      [-1,  0, 1, -1]], dtype=np.int8)
+        # Row-major: [1, -1, 0, 1, -1, 0, 1, -1]
+
+        packed = TernaryMLP._pack_ternary_2bit(w)
+        assert len(packed) == 2  # 8 trits → 2 bytes
+
+        expected_trits = [1, -1, 0, 1, -1, 0, 1, -1]
+
+        # Decode using the EXACT logic from the C snippet
+        for byte_idx, b in enumerate(packed):
+            for i in range(4):
+                trit_idx = byte_idx * 4 + i
+                # C snippet line 1: uint8_t code = (b >> (i * 2)) & 0x03;
+                code = (b >> (i * 2)) & 0x03
+                # C snippet line 2: int8_t trit = (code == 0x01) ? +1 : (code == 0x02) ? -1 : 0;
+                trit = 1 if code == 0x01 else (-1 if code == 0x02 else 0)
+
+                assert trit == expected_trits[trit_idx], (
+                    f"Trit {trit_idx}: C snippet decoded {trit}, "
+                    f"expected {expected_trits[trit_idx]}. "
+                    f"byte=0x{b:02X}, i={i}, code=0b{code:02b}"
+                )

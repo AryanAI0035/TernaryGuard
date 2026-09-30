@@ -1,0 +1,41 @@
+{
+  "run_id": "phase3_corrected_seed42",
+  "seed": 42,
+  "data_manifest_sha256": "d19f25f5e0d6602021943091a70debfd1c17ddefa9d2e4760b8f1c741c04821d",
+  "arguments": {
+    "data_dir": "/Users/aryanshukla/Desktop/TernaryGuard/data/raw/nbaiot",
+    "n_features": 20,
+    "epochs": 50,
+    "ablation_epochs": 30,
+    "lr": 0.001,
+    "batch_size": 1024,
+    "max_samples_per_class": 50000,
+    "seed": 42,
+    "val_devices": [
+      "8"
+    ],
+    "test_devices": [
+      "9"
+    ],
+    "mi_samples": 20000,
+    "run_id": "phase3_corrected_seed42",
+    "output_dir": null,
+    "results": "/Users/aryanshukla/Desktop/TernaryGuard/results.csv",
+    "export_only": false,
+    "ablation_only": false,
+    "checkpoint": null,
+    "no_ablation": false
+  },
+  "versions": {
+    "torch": "2.7.0",
+    "numpy": "2.2.5",
+    "pandas": "3.0.5"
+  },
+  "source_sha256": {
+    "model/__init__.py": "c4eded09493f730a2e50e430ad837a7d07130cacef21549d1920dfe71d04ab33",
+    "model/artifacts.py": "1532e8f6f761e04df9d63fb3adbb5799e8a8967387ed0bcdc77aa3789030aa47",
+    "model/data_pipeline.py": "abc7c203adc86fcff921cf88820c338b4e7719a7a840f411791ee450f0efd754",
+    "model/ternary_linear.py": "3009ec01501dbe1e90b36015713ecb27be7be4e4f8d9885c67e466ee29ab7dcf",
+    "model/train.py": "d88465e313b54609eedcbc4cc218388ad668b7e0db9c6c45f01c25555286e882"
+  }
+}

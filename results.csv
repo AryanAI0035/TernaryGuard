@@ -1,9 +1,4 @@
-phase,experiment,model_type,architecture,hidden_dims,num_params,accuracy,precision,recall,f1_score,model_size_bytes,inference_latency_us,flash_bytes,ram_bytes,lut_count,ff_count,dsp_count,bram_count,power_mw,clock_mhz,notes
-3,baseline_fp32,fp32,MLP,\"[32, 16]\",1439,0.902764,0.948371,0.902764,0.872513,5756,,,,,,,,,,FP32 MLP with RMSNorm baseline
-3,quantized_int8,int8,MLP,\"[32, 16]\",1439,0.898636,0.944044,0.898636,0.868371,1784,,,,,,,,,,Post-training symmetric INT8 from FP32+RMSNorm
-3,ternary_2bit,ternary,TernaryMLP,\"[32, 16]\",1439,0.855000,0.809628,0.855000,0.824490,611,,12159,360,,,,,,,\"Ternary with RMSNorm, 2-bit packing, unified PROGMEM\"
-3,ablation_16_8,ternary,TernaryMLP,\"[16, 8]\",607,0.819173,0.780924,0.819173,0.788837,325,,11873,312,,,,,,,\"Ablation sweep: [16, 8]\"
-3,ablation_24_12,ternary,TernaryMLP,\"[24, 12]\",991,0.842191,0.808005,0.842191,0.809387,460,,12008,328,,,,,,,\"Ablation sweep: [24, 12]\"
-3,ablation_32_16,ternary,TernaryMLP,\"[32, 16]\",1439,0.853691,0.814800,0.853691,0.822314,611,,12159,360,,,,,,,\"Ablation sweep: [32, 16]\"
-3,ablation_48_24,ternary,TernaryMLP,\"[48, 24]\",2527,0.858236,0.850058,0.858236,0.826910,961,,12509,424,,,,,,,\"Ablation sweep: [48, 24]\"
-3,ablation_64_32,ternary,TernaryMLP,\"[64, 32]\",3871,0.865382,0.821649,0.865382,0.834191,1375,,12923,488,,,,,,,\"Ablation sweep: [64, 32]\"
+phase,experiment,model_type,architecture,hidden_dims,num_params,accuracy,precision,recall,f1_score,model_size_bytes,inference_latency_us,flash_bytes,ram_bytes,lut_count,ff_count,dsp_count,bram_count,power_mw,clock_mhz,notes,run_id,seed,macro_f1,val_macro_f1,estimated_ram_bytes,ternary_weight_terms,nonzero_ternary_terms,dense_weight_multiplications,output_scale_multiplications
+3,ternary_2bit,ternary,TernaryMLP,"[64, 32]",3871,0.8108198146002318,0.8205284156309776,0.8108198146002318,0.7842347539957992,1696,,,,,,,,,,device-held-out test; model bytes are constant-storage estimate; hardware unmeasured; FP32 biases and normalization,phase3_final_seed42,42,0.78209432162603,0.7822056420700175,720,3680,2400,0,107
+3,baseline_fp32,fp32,FP32MLP,"[64, 32]",3871,0.8960312862108922,0.8563159266691143,0.8960312862108922,0.8693735121480983,15484,,,,,,,,,,device-held-out test; model bytes are constant-storage estimate; hardware unmeasured; FP32 biases and normalization,phase3_final_seed42,42,0.8577491367785895,0.8646059794190438,,0,0,3680,0
+3,quantized_int8,int8,INT8MLP,"[64, 32]",3871,0.8874855156431054,0.8898421468597282,0.8874855156431054,0.8607112856476055,4456,,,,,,,,,,device-held-out test; model bytes are constant-storage estimate; hardware unmeasured; INT8 weights simulated with FP32 execution,phase3_final_seed42,42,0.8501569165072425,0.856964022058179,,0,0,3680,0

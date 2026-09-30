@@ -1,0 +1,6 @@
+{
+  "production": "ternary_2bit",
+  "best_validation_candidate": "ablation_64_32",
+  "best_validation_macro_f1": 0.7822056420700175,
+  "policy": "production width fixed at 32/16; ablation ranking uses validation only"
+}

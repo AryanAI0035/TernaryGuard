@@ -1,0 +1,93 @@
+{
+  "seed": 42,
+  "train_devices": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "validation_device": 8,
+  "rows_per_device_per_class": 1000,
+  "config": "checkpoints/phase3_distinct_features_seed42/feature_config.json",
+  "experiments": {
+    "selected": {
+      "training_accuracy": 0.9897142857142858,
+      "validation_balanced_accuracy": 1.0,
+      "top_features": [
+        {
+          "name": "HH_jit_L0.01_mean",
+          "importance": 0.9983763202265828
+        },
+        {
+          "name": "H_L0.01_mean",
+          "importance": 0.0003321949563463887
+        },
+        {
+          "name": "HH_L0.1_weight",
+          "importance": 0.00018702540358379218
+        },
+        {
+          "name": "MI_dir_L0.01_variance",
+          "importance": 0.00014134813070827189
+        },
+        {
+          "name": "H_L0.1_weight",
+          "importance": 0.00011842119533981691
+        },
+        {
+          "name": "HH_L0.01_magnitude",
+          "importance": 0.00011691715212503655
+        },
+        {
+          "name": "HH_jit_L0.01_weight",
+          "importance": 9.631756948289538e-05
+        },
+        {
+          "name": "HH_L0.01_radius",
+          "importance": 7.998641237123802e-05
+        }
+      ]
+    },
+    "all": {
+      "training_accuracy": 0.9897142857142858,
+      "validation_balanced_accuracy": 1.0,
+      "top_features": [
+        {
+          "name": "HH_jit_L0.01_mean",
+          "importance": 0.3243282885426504
+        },
+        {
+          "name": "HH_jit_L5_mean",
+          "importance": 0.3242708822266157
+        },
+        {
+          "name": "HH_jit_L1_mean",
+          "importance": 0.1995897745506064
+        },
+        {
+          "name": "HH_jit_L3_mean",
+          "importance": 0.09972708441824632
+        },
+        {
+          "name": "HH_jit_L0.1_mean",
+          "importance": 0.049969715376438316
+        },
+        {
+          "name": "H_L0.01_variance",
+          "importance": 0.00026947545220806963
+        },
+        {
+          "name": "H_L0.01_mean",
+          "importance": 0.0002252967537800862
+        },
+        {
+          "name": "MI_dir_L0.1_weight",
+          "importance": 0.00017686706363654537
+        }
+      ]
+    }
+  }
+}

@@ -1,6 +1,13 @@
 # TernaryGuard — Complete Implementation Plan
 ### One Ternary AI Model. Three Silicon-to-Software Deployments. One Cybersecurity Mission.
 
+> Current scope clarification (2026-09-30): FPGA work targets simulation and
+> synthesis for Basys 3; there is no physical FPGA board in the present scope.
+> Physical-board demos below are future extensions. Phase-3 correctness uses
+> FP32 activations/biases and multiplier-free ternary dot products. Full-network
+> fixed-point arithmetic and measured resource claims remain later validation
+> work. See `docs/architecture_budget.md` and `docs/phase3_review.md`.
+
 ---
 
 ## 1. Project Vision

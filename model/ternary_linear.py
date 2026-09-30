@@ -304,6 +304,8 @@ class TernaryMLP(nn.Module):
         use_rmsnorm: bool = True,
     ):
         super().__init__()
+        self.use_rmsnorm = use_rmsnorm
+        self.ternary_output = ternary_output
         self.input_dim = input_dim
         self.hidden_dims = list(hidden_dims)
         self.output_dim = output_dim
@@ -355,13 +357,16 @@ class TernaryMLP(nn.Module):
         This is slightly less dense than the information-theoretic minimum
         of log₂3 ≈ 1.58 bits, but trivial to encode/decode in C and Verilog.
 
-        Biases are stored as int8 on the embedded target (1 byte each).
+        Biases retain float32 precision (4 bytes each).
         Scale factors are float32 (4 bytes each, one per TernaryLinear layer).
         RMSNorm gammas are float32 (4 bytes per feature dimension element).
 
         Returns:
-            dict with detailed byte breakdown and total.
+            dict with detailed model-constant byte breakdown and total. Exported
+            dimension arrays and RMSNorm epsilon scalars are additional metadata.
         """
+        packed_weight_bytes = 0
+        fp_weight_bytes = 0
         ternary_weight_count = 0
         bias_count = 0
         scale_count = 0
@@ -370,29 +375,34 @@ class TernaryMLP(nn.Module):
         for module in self.modules():
             if isinstance(module, TernaryLinear):
                 ternary_weight_count += module.weight.numel()
+                packed_weight_bytes += math.ceil(module.weight.numel() / 4)
                 scale_count += 1
+                if module.bias is not None:
+                    bias_count += module.bias.numel()
+            elif isinstance(module, nn.Linear):
+                fp_weight_bytes += module.weight.numel() * 4
                 if module.bias is not None:
                     bias_count += module.bias.numel()
             elif isinstance(module, RMSNorm):
                 rmsnorm_param_count += module.gamma.numel()
 
-        packed_weight_bytes = math.ceil(ternary_weight_count * 2 / 8)
-        bias_bytes = bias_count  # int8 on embedded
+        bias_bytes = bias_count * 4  # preserve trained float32 biases
         scale_bytes = scale_count * 4  # float32
         rmsnorm_bytes = rmsnorm_param_count * 4  # float32 gamma
 
-        total = packed_weight_bytes + bias_bytes + scale_bytes + rmsnorm_bytes
+        total = packed_weight_bytes + fp_weight_bytes + bias_bytes + scale_bytes + rmsnorm_bytes
 
         return {
             "ternary_weights": ternary_weight_count,
             "packed_weight_bytes": packed_weight_bytes,
+            "fp_weight_bytes": fp_weight_bytes,
             "bias_bytes": bias_bytes,
             "scale_bytes": scale_bytes,
             "rmsnorm_bytes": rmsnorm_bytes,
             "total_bytes": total,
         }
 
-    def estimate_ram_usage(self, activation_dtype_bytes: int = 2,
+    def estimate_ram_usage(self, activation_dtype_bytes: int = 4,
                            stack_reserve: int = 128,
                            constants_in_progmem: bool = True) -> Dict[str, int]:
         """
@@ -407,12 +417,12 @@ class TernaryMLP(nn.Module):
 
         All trained constants live in flash via PROGMEM (default):
         - **Weights** (packed 2-bit): read in the inner accumulate loop
-        - **Biases** (int8): read once per output neuron
+        - **Biases** (float32): read once per output neuron
         - **Scale factors** (float32, 1 per layer): read once per layer,
           broadcast to all outputs — 3 reads total for 20→32→16→11
         - **RMSNorm gamma** (float32, 1 per input feature): read once per
           feature during normalization — 52 reads total (20+32) for the
-          production architecture, ~3µs at 16MHz via pgm_read_float()
+          production architecture; target read timing is not yet measured
 
         The consistent rule: if it's constant after training, it's PROGMEM.
         Only mutable runtime state (activations, input buffer, stack) is RAM.
@@ -421,8 +431,8 @@ class TernaryMLP(nn.Module):
         scale factors and gamma are copied to .data at startup.
 
         Args:
-            activation_dtype_bytes: Bytes per activation element. Default 2
-                (int16 fixed-point on AVR, no FPU).
+            activation_dtype_bytes: Bytes per activation element. Default 4
+                (float32 reference; fixed-point deployment remains future work).
             stack_reserve: Bytes reserved for stack + serial buffer.
             constants_in_progmem: If True (default), all trained constants
                 (scale factors + RMSNorm gamma) are in PROGMEM, not counted
@@ -479,7 +489,7 @@ class TernaryMLP(nn.Module):
         - The canonical 2-bit encoding spec as a comment block
           (generated from TRIT_ENCODING_SPEC_LINES, not hand-duplicated)
         - Packed weight arrays (4 trits per byte, LSB-first)
-        - Bias arrays (int8)
+        - Bias arrays (float32)
         - Scale factors (float32)
         - RMSNorm gamma arrays (float32)
         - Architecture metadata (#defines for dims)
@@ -495,6 +505,8 @@ class TernaryMLP(nn.Module):
         Returns:
             The path written to.
         """
+        if not self.ternary_output:
+            raise ValueError("Header export requires a ternary classifier")
         lines = []
         lines.append("/*")
         lines.append(" * model_weights.h — Auto-generated by TernaryMLP.export_weights_header()")
@@ -523,8 +535,10 @@ class TernaryMLP(nn.Module):
         lines.append(f"#define TG_INPUT_DIM  {self.input_dim}")
         lines.append(f"#define TG_OUTPUT_DIM {self.output_dim}")
         lines.append(f"#define TG_NUM_LAYERS {len(all_dims) - 1}")
+        lines.append(f"#define TG_USE_RMSNORM {int(self.use_rmsnorm)}")
+        lines.append("#define TG_FORMAT_VERSION 2")
         dims_str = ", ".join(str(d) for d in all_dims)
-        lines.append(f"static const uint8_t TG_DIMS[] = {{{dims_str}}};")
+        lines.append(f"static const uint16_t TGPROGMEM TG_DIMS[] = {{{dims_str}}};")
         lines.append("")
 
         # Export each layer
@@ -532,7 +546,7 @@ class TernaryMLP(nn.Module):
         for module in self.modules():
             if isinstance(module, TernaryLinear):
                 w_ternary, scale = module.get_ternary_weights()
-                w_np = w_ternary.numpy()  # shape: (out_features, in_features)
+                w_np = w_ternary.cpu().numpy()  # shape: (out_features, in_features)
 
                 # Pack into 2-bit encoding
                 packed = self._pack_ternary_2bit(w_np)
@@ -551,13 +565,13 @@ class TernaryMLP(nn.Module):
 
                 # Bias
                 if module.bias is not None:
-                    bias_np = module.bias.detach().round().clamp(-128, 127).to(torch.int8).numpy()
-                    bias_vals = ", ".join(str(int(b)) for b in bias_np)
-                    lines.append(f"static const int8_t TGPROGMEM tg_bias_{layer_idx}[] = {{{bias_vals}}};")
+                    bias_np = module.bias.detach().cpu().numpy()
+                    bias_vals = ", ".join(f"{float(b):.9e}f" for b in bias_np)
+                    lines.append(f"static const float TGPROGMEM tg_bias_{layer_idx}[] = {{{bias_vals}}};")
 
                 # Scale
                 scale_val = scale.item() if hasattr(scale, 'item') else float(scale)
-                lines.append(f"static const float tg_scale_{layer_idx} = {scale_val:.8f}f;")
+                lines.append(f"static const float TGPROGMEM tg_scale_{layer_idx} = {scale_val:.9e}f;")
                 lines.append("")
                 layer_idx += 1
 
@@ -565,9 +579,10 @@ class TernaryMLP(nn.Module):
         norm_idx = 0
         for module in self.modules():
             if isinstance(module, RMSNorm):
-                gamma_np = module.gamma.detach().numpy()
-                gamma_vals = ", ".join(f"{g:.8f}f" for g in gamma_np)
+                gamma_np = module.gamma.detach().cpu().numpy()
+                gamma_vals = ", ".join(f"{float(g):.9e}f" for g in gamma_np)
                 lines.append(f"static const float TGPROGMEM tg_rmsnorm_gamma_{norm_idx}[] = {{{gamma_vals}}};")
+                lines.append(f"static const float TGPROGMEM tg_rmsnorm_eps_{norm_idx} = {module.eps:.9e}f;")
                 norm_idx += 1
 
         lines.append("")

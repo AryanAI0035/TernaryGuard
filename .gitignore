@@ -100,4 +100,5 @@ logs/
 Information Theory in DL/
 checkpoints/
 data/
-model_weights.h
+# Keep the small validated shared header; full training bundles stay local.
+!model_weights.h

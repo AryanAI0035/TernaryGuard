@@ -1,0 +1,411 @@
+{
+  "format_version": 2,
+  "architecture": {
+    "input_dim": 20,
+    "hidden_dims": [
+      64,
+      32
+    ],
+    "output_dim": 11,
+    "use_rmsnorm": true,
+    "ternary_output": true
+  },
+  "preprocessing_sha256": "1339886eaa7cde612b32831057afb225b7d5f314f8ebecdc6f8d57ae99c55c7d",
+  "checkpoint_sha256": "c335f7d468c932c3855b190061f452ff2b5b0f3fca8276bf1bff6d674ad13774",
+  "header_sha256": "e1d919a0049e2c492d4ce54168cf9cb223bd90b4b1b74554539089ccf4c60ee8",
+  "provenance": {
+    "run_id": "phase3_final_seed42",
+    "seed": 42,
+    "data_manifest_sha256": "fb6b033fbf5818701768ad0441fda2de8df4cc6b36e34ec012b42c57dba5118b",
+    "arguments": {
+      "data_dir": "/Users/aryanshukla/Desktop/TernaryGuard/data/raw/nbaiot",
+      "n_features": 20,
+      "epochs": 50,
+      "ablation_epochs": 30,
+      "lr": 0.001,
+      "batch_size": 1024,
+      "max_samples_per_class": 50000,
+      "seed": 42,
+      "val_devices": [
+        "8"
+      ],
+      "test_devices": [
+        "9"
+      ],
+      "mi_samples": 20000,
+      "feature_correlation_limit": 0.98,
+      "feature_transform": "signed_log1p",
+      "run_id": "phase3_log_features_seed42",
+      "output_dir": null,
+      "results": "checkpoints/phase3_log_features_results.csv",
+      "export_only": false,
+      "ablation_only": false,
+      "checkpoint": null,
+      "no_ablation": false
+    },
+    "versions": {
+      "torch": "2.7.0",
+      "numpy": "2.2.5",
+      "pandas": "3.0.5",
+      "sklearn": "1.9.0",
+      "python": "3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]"
+    },
+    "source_sha256": {
+      "model/__init__.py": "c4eded09493f730a2e50e430ad837a7d07130cacef21549d1920dfe71d04ab33",
+      "model/artifacts.py": "e3b3811cc52a279c55e5627370b8d2dc954a3cd19cd3d0faf71fc3a4e881b64b",
+      "model/data_pipeline.py": "6eb49fe10df6252db91c96029e8a3a27a182ac45ce506cc8e8a1d3a5999ba541",
+      "model/ternary_linear.py": "808340594d84c71995c0fe765f695134484e8a64d8a7c5d663819fb855653c58",
+      "model/train.py": "0da9dc2cb3308e7c3a1ee8b0bc4e345b434f9bb65524c502f2de85ed3367de66",
+      "model/validate_export.py": "0f31ffadf75b299ad86885d8916fc5a9d81649a1a086c07937cdc6c2eacc6449"
+    },
+    "selection": {
+      "policy": "Require nonzero recall for every validation class, then maximize validation macro-F1; test metrics unused",
+      "chosen": {
+        "checkpoint": "checkpoints/phase3_log_features_seed42/ablation_64_32.pt",
+        "validation_macro_f1": 0.7822056420700175,
+        "validation_recall": {
+          "benign": 0.9627362736273627,
+          "mirai_ack": 0.4107517849643007,
+          "mirai_scan": 0.995520089598208,
+          "mirai_syn": 0.999720005599888,
+          "mirai_udp": 0.9360212795744085,
+          "mirai_udpplain": 0.6754864902701946,
+          "bashlite_combo": 0.9681368136813682,
+          "bashlite_junk": 0.996039603960396,
+          "bashlite_scan": 0.9994599459945994,
+          "bashlite_tcp": 0.00018001800180018,
+          "bashlite_udp": 0.9990999099909991
+        },
+        "eligible": true
+      },
+      "candidates": [
+        {
+          "checkpoint": "checkpoints/phase3_corrected_seed42/ternary_2bit.pt",
+          "validation_macro_f1": 0.7004576618856446,
+          "validation_recall": {
+            "benign": 0.9746174617461746,
+            "mirai_ack": 0.877782444351113,
+            "mirai_scan": 0.9818003639927202,
+            "mirai_syn": 0.875262494750105,
+            "mirai_udp": 0.5216295674086519,
+            "mirai_udpplain": 0.6483270334593308,
+            "bashlite_combo": 0.7108910891089109,
+            "bashlite_junk": 0.5310531053105311,
+            "bashlite_scan": 0.859045904590459,
+            "bashlite_tcp": 0.0,
+            "bashlite_udp": 0.998919891989199
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_corrected_seed42/ablation_16_8.pt",
+          "validation_macro_f1": 0.6185032827748898,
+          "validation_recall": {
+            "benign": 0.9708370837083709,
+            "mirai_ack": 0.25801483970320593,
+            "mirai_scan": 0.9654206915861683,
+            "mirai_syn": 0.8667226655466891,
+            "mirai_udp": 0.8860422791544169,
+            "mirai_udpplain": 0.9295814083718326,
+            "bashlite_combo": 0.6268226822682268,
+            "bashlite_junk": 0.0,
+            "bashlite_scan": 0.9983798379837984,
+            "bashlite_tcp": 0.0,
+            "bashlite_udp": 0.998919891989199
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_corrected_seed42/ablation_24_12.pt",
+          "validation_macro_f1": 0.6483776279468768,
+          "validation_recall": {
+            "benign": 0.9607560756075607,
+            "mirai_ack": 0.0,
+            "mirai_scan": 0.883242335153297,
+            "mirai_syn": 0.8829623407531849,
+            "mirai_udp": 0.9619207615847684,
+            "mirai_udpplain": 0.8481030379392412,
+            "bashlite_combo": 0.5904590459045904,
+            "bashlite_junk": 0.6772277227722773,
+            "bashlite_scan": 0.9717371737173718,
+            "bashlite_tcp": 0.9985598559855986,
+            "bashlite_udp": 0.0
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_corrected_seed42/ablation_32_16.pt",
+          "validation_macro_f1": 0.7004576618856446,
+          "validation_recall": {
+            "benign": 0.9746174617461746,
+            "mirai_ack": 0.877782444351113,
+            "mirai_scan": 0.9818003639927202,
+            "mirai_syn": 0.875262494750105,
+            "mirai_udp": 0.5216295674086519,
+            "mirai_udpplain": 0.6483270334593308,
+            "bashlite_combo": 0.7108910891089109,
+            "bashlite_junk": 0.5310531053105311,
+            "bashlite_scan": 0.859045904590459,
+            "bashlite_tcp": 0.0,
+            "bashlite_udp": 0.998919891989199
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_corrected_seed42/ablation_48_24.pt",
+          "validation_macro_f1": 0.7528259115644933,
+          "validation_recall": {
+            "benign": 0.9641764176417642,
+            "mirai_ack": 0.7120257594848103,
+            "mirai_scan": 0.9812403751924962,
+            "mirai_syn": 0.9696206075878483,
+            "mirai_udp": 0.753464930701386,
+            "mirai_udpplain": 0.871482570348593,
+            "bashlite_combo": 0.5497749774977497,
+            "bashlite_junk": 0.8284428442844285,
+            "bashlite_scan": 0.9920792079207921,
+            "bashlite_tcp": 0.0,
+            "bashlite_udp": 0.998919891989199
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_corrected_seed42/ablation_64_32.pt",
+          "validation_macro_f1": 0.7530306446390855,
+          "validation_recall": {
+            "benign": 0.9618361836183619,
+            "mirai_ack": 0.5902281954360913,
+            "mirai_scan": 0.9753604927901443,
+            "mirai_syn": 0.999860002799944,
+            "mirai_udp": 0.7971440571188576,
+            "mirai_udpplain": 0.9841803163936721,
+            "bashlite_combo": 0.46534653465346537,
+            "bashlite_junk": 0.8957695769576958,
+            "bashlite_scan": 0.9990999099909991,
+            "bashlite_tcp": 0.9985598559855986,
+            "bashlite_udp": 0.0
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_distinct_features_seed42/ternary_2bit.pt",
+          "validation_macro_f1": 0.7125569006278917,
+          "validation_recall": {
+            "benign": 0.9609360936093609,
+            "mirai_ack": 0.8026039479210416,
+            "mirai_scan": 0.9617807643847123,
+            "mirai_syn": 0.999580008399832,
+            "mirai_udp": 0.3896122077558449,
+            "mirai_udpplain": 0.4803303933921322,
+            "bashlite_combo": 0.6347434743474347,
+            "bashlite_junk": 0.9665166516651665,
+            "bashlite_scan": 0.9803780378037804,
+            "bashlite_tcp": 0.9985598559855986,
+            "bashlite_udp": 0.0
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_distinct_features_seed42/ablation_16_8.pt",
+          "validation_macro_f1": 0.6598042550832094,
+          "validation_recall": {
+            "benign": 0.9891989198919892,
+            "mirai_ack": 0.0,
+            "mirai_scan": 0.9668206635867282,
+            "mirai_syn": 0.999860002799944,
+            "mirai_udp": 0.50804983900322,
+            "mirai_udpplain": 0.9391012179756405,
+            "bashlite_combo": 0.5573357335733573,
+            "bashlite_junk": 0.9783978397839784,
+            "bashlite_scan": 0.985958595859586,
+            "bashlite_tcp": 0.0,
+            "bashlite_udp": 0.998919891989199
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_distinct_features_seed42/ablation_24_12.pt",
+          "validation_macro_f1": 0.7090805761218808,
+          "validation_recall": {
+            "benign": 0.9861386138613861,
+            "mirai_ack": 0.635447291054179,
+            "mirai_scan": 0.9745205095898082,
+            "mirai_syn": 0.999860002799944,
+            "mirai_udp": 0.4278314433711326,
+            "mirai_udpplain": 0.4743105137897242,
+            "bashlite_combo": 0.7193519351935194,
+            "bashlite_junk": 0.913951395139514,
+            "bashlite_scan": 0.9947794779477948,
+            "bashlite_tcp": 0.0,
+            "bashlite_udp": 0.998919891989199
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_distinct_features_seed42/ablation_32_16.pt",
+          "validation_macro_f1": 0.7125569006278917,
+          "validation_recall": {
+            "benign": 0.9609360936093609,
+            "mirai_ack": 0.8026039479210416,
+            "mirai_scan": 0.9617807643847123,
+            "mirai_syn": 0.999580008399832,
+            "mirai_udp": 0.3896122077558449,
+            "mirai_udpplain": 0.4803303933921322,
+            "bashlite_combo": 0.6347434743474347,
+            "bashlite_junk": 0.9665166516651665,
+            "bashlite_scan": 0.9803780378037804,
+            "bashlite_tcp": 0.9985598559855986,
+            "bashlite_udp": 0.0
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_distinct_features_seed42/ablation_48_24.pt",
+          "validation_macro_f1": 0.7778872175503547,
+          "validation_recall": {
+            "benign": 0.9956795679567957,
+            "mirai_ack": 0.6747865042699146,
+            "mirai_scan": 0.9875402491950162,
+            "mirai_syn": 0.999860002799944,
+            "mirai_udp": 0.5452890942181157,
+            "mirai_udpplain": 0.8367632647347053,
+            "bashlite_combo": 0.8748874887488749,
+            "bashlite_junk": 0.9823582358235824,
+            "bashlite_scan": 0.9872187218721872,
+            "bashlite_tcp": 0.9985598559855986,
+            "bashlite_udp": 0.0
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_distinct_features_seed42/ablation_64_32.pt",
+          "validation_macro_f1": 0.8100605547447014,
+          "validation_recall": {
+            "benign": 0.9895589558955895,
+            "mirai_ack": 0.9423211535769285,
+            "mirai_scan": 0.9952400951980961,
+            "mirai_syn": 0.999720005599888,
+            "mirai_udp": 0.5399692006159876,
+            "mirai_udpplain": 0.9111017779644407,
+            "bashlite_combo": 0.9281728172817282,
+            "bashlite_junk": 0.9609360936093609,
+            "bashlite_scan": 0.9926192619261927,
+            "bashlite_tcp": 0.0,
+            "bashlite_udp": 0.998919891989199
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_log_features_seed42/ternary_2bit.pt",
+          "validation_macro_f1": 0.7354082350670709,
+          "validation_recall": {
+            "benign": 0.8961296129612961,
+            "mirai_ack": 0.7600447991040179,
+            "mirai_scan": 0.99440011199776,
+            "mirai_syn": 0.9797004059918801,
+            "mirai_udp": 0.24485510289794205,
+            "mirai_udpplain": 0.6911661766764665,
+            "bashlite_combo": 0.9020702070207021,
+            "bashlite_junk": 0.987938793879388,
+            "bashlite_scan": 0.9953195319531953,
+            "bashlite_tcp": 0.9985598559855986,
+            "bashlite_udp": 0.0
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_log_features_seed42/ablation_16_8.pt",
+          "validation_macro_f1": 0.6903566829589746,
+          "validation_recall": {
+            "benign": 0.956075607560756,
+            "mirai_ack": 0.6672266554668906,
+            "mirai_scan": 0.9927201455970881,
+            "mirai_syn": 0.9724205515889682,
+            "mirai_udp": 0.2269354612907742,
+            "mirai_udpplain": 0.3005739885202296,
+            "bashlite_combo": 0.9305130513051305,
+            "bashlite_junk": 0.9447344734473447,
+            "bashlite_scan": 0.992979297929793,
+            "bashlite_tcp": 0.0,
+            "bashlite_udp": 0.9992799279927993
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_log_features_seed42/ablation_24_12.pt",
+          "validation_macro_f1": 0.7355623914019496,
+          "validation_recall": {
+            "benign": 0.9357335733573358,
+            "mirai_ack": 0.5805683886322274,
+            "mirai_scan": 0.995520089598208,
+            "mirai_syn": 0.999580008399832,
+            "mirai_udp": 0.4300713985720286,
+            "mirai_udpplain": 0.5952680946381073,
+            "bashlite_combo": 0.8955895589558955,
+            "bashlite_junk": 0.9972997299729973,
+            "bashlite_scan": 0.9967596759675967,
+            "bashlite_tcp": 0.9985598559855986,
+            "bashlite_udp": 0.00036003600360036
+          },
+          "eligible": true
+        },
+        {
+          "checkpoint": "checkpoints/phase3_log_features_seed42/ablation_32_16.pt",
+          "validation_macro_f1": 0.7354082350670709,
+          "validation_recall": {
+            "benign": 0.8961296129612961,
+            "mirai_ack": 0.7600447991040179,
+            "mirai_scan": 0.99440011199776,
+            "mirai_syn": 0.9797004059918801,
+            "mirai_udp": 0.24485510289794205,
+            "mirai_udpplain": 0.6911661766764665,
+            "bashlite_combo": 0.9020702070207021,
+            "bashlite_junk": 0.987938793879388,
+            "bashlite_scan": 0.9953195319531953,
+            "bashlite_tcp": 0.9985598559855986,
+            "bashlite_udp": 0.0
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_log_features_seed42/ablation_48_24.pt",
+          "validation_macro_f1": 0.7776513209810294,
+          "validation_recall": {
+            "benign": 0.9981998199819982,
+            "mirai_ack": 0.6831863362732745,
+            "mirai_scan": 0.997480050398992,
+            "mirai_syn": 0.997340053198936,
+            "mirai_udp": 0.5889682206355873,
+            "mirai_udpplain": 0.6946661066778664,
+            "bashlite_combo": 0.9112511251125113,
+            "bashlite_junk": 0.9857785778577858,
+            "bashlite_scan": 0.9987398739873987,
+            "bashlite_tcp": 0.0,
+            "bashlite_udp": 0.998919891989199
+          },
+          "eligible": false
+        },
+        {
+          "checkpoint": "checkpoints/phase3_log_features_seed42/ablation_64_32.pt",
+          "validation_macro_f1": 0.7822056420700175,
+          "validation_recall": {
+            "benign": 0.9627362736273627,
+            "mirai_ack": 0.4107517849643007,
+            "mirai_scan": 0.995520089598208,
+            "mirai_syn": 0.999720005599888,
+            "mirai_udp": 0.9360212795744085,
+            "mirai_udpplain": 0.6754864902701946,
+            "bashlite_combo": 0.9681368136813682,
+            "bashlite_junk": 0.996039603960396,
+            "bashlite_scan": 0.9994599459945994,
+            "bashlite_tcp": 0.00018001800180018,
+            "bashlite_udp": 0.9990999099909991
+          },
+          "eligible": true
+        }
+      ]
+    },
+    "matched_baseline_epochs": 30,
+    "selected_checkpoint": "checkpoints/phase3_log_features_seed42/ablation_64_32.pt"
+  }
+}

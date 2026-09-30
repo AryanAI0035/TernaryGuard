@@ -1,0 +1,44 @@
+{
+  "run_id": "phase3_distinct_features_seed42",
+  "seed": 42,
+  "data_manifest_sha256": "8920e2f6058407b625366ba3c3b359da0e0392549219a6f29c8302e3438503b6",
+  "arguments": {
+    "data_dir": "/Users/aryanshukla/Desktop/TernaryGuard/data/raw/nbaiot",
+    "n_features": 20,
+    "epochs": 50,
+    "ablation_epochs": 30,
+    "lr": 0.001,
+    "batch_size": 1024,
+    "max_samples_per_class": 50000,
+    "seed": 42,
+    "val_devices": [
+      "8"
+    ],
+    "test_devices": [
+      "9"
+    ],
+    "mi_samples": 20000,
+    "feature_correlation_limit": 0.98,
+    "run_id": "phase3_distinct_features_seed42",
+    "output_dir": null,
+    "results": "checkpoints/phase3_distinct_features_results.csv",
+    "export_only": false,
+    "ablation_only": false,
+    "checkpoint": null,
+    "no_ablation": false
+  },
+  "versions": {
+    "torch": "2.7.0",
+    "numpy": "2.2.5",
+    "pandas": "3.0.5",
+    "sklearn": "1.9.0",
+    "python": "3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]"
+  },
+  "source_sha256": {
+    "model/__init__.py": "c4eded09493f730a2e50e430ad837a7d07130cacef21549d1920dfe71d04ab33",
+    "model/artifacts.py": "1532e8f6f761e04df9d63fb3adbb5799e8a8967387ed0bcdc77aa3789030aa47",
+    "model/data_pipeline.py": "5d9b5e16fcfc6977fe2551823df541470544756d23b3ce76589f47228035e6d1",
+    "model/ternary_linear.py": "808340594d84c71995c0fe765f695134484e8a64d8a7c5d663819fb855653c58",
+    "model/train.py": "ebd70ecc9666e9f14d3c6af3ed1ba46659ab93dbd07880c972b5de7b0818c67a"
+  }
+}

@@ -1,6 +1,9 @@
 import os
 import json
 import logging
+import hashlib
+import re
+from pathlib import Path
 from typing import Tuple, List, Dict, Optional, Union
 
 import numpy as np
@@ -14,26 +17,21 @@ from sklearn.feature_selection import mutual_info_classif, VarianceThreshold
 logger = logging.getLogger(__name__)
 
 
+def transform_features(values, transform="identity"):
+    """Deterministic preprocessing, with no statistics fitted on held-out rows."""
+    if transform == "identity":
+        return values
+    if transform == "signed_log1p":
+        return np.sign(values) * np.log1p(np.abs(values))
+    raise ValueError(f"Unknown feature transform: {transform}")
+
+
 def get_feature_names() -> List[str]:
     """
     Return the 115 N-BaIoT feature names in order.
     Uses the naming convention: {stream}_{timeframe}_{stat}
     """
-    streams_stats = {
-        'MI_dir': ['weight', 'mean', 'std'],
-        'H': ['weight', 'mean', 'std', 'radius', 'magnitude'],
-        'HH': ['weight', 'mean', 'std', 'radius', 'magnitude', 'cov', 'pcc'],
-        'HH_jit': ['weight', 'mean', 'std'],
-        'HpHp': ['weight', 'mean', 'std', 'radius', 'magnitude']
-    }
-    timeframes = ['L5', 'L3', 'L1', 'L0.1', 'L0.01']
-    
-    features = []
-    for stream, stats in streams_stats.items():
-        for timeframe in timeframes:
-            for stat in stats:
-                features.append(f"{stream}_{timeframe}_{stat}")
-    return features
+    return json.loads(Path(__file__).with_name("feature_schema.json").read_text())
 
 
 def get_label_names() -> Dict[int, str]:
@@ -63,7 +61,7 @@ class NBaIoTDataset:
 
     def __init__(self, data_dir: str = 'data/raw/nbaiot', 
                  selected_features: Optional[List[int]] = None, 
-                 max_samples_per_class: int = 50000):
+                 max_samples_per_class: int = 50000, seed: int = 42):
         """
         Initialize the dataset pipeline.
         
@@ -72,6 +70,9 @@ class NBaIoTDataset:
             selected_features (list, optional): List of feature indices to use (None = all 115).
             max_samples_per_class (int): Cap per class to balance the dataset.
         """
+        self.seed = seed
+        self.metadata = pd.DataFrame()
+        self.sources = []
         self.data_dir = data_dir
         self.selected_features = selected_features
         self.max_samples_per_class = max_samples_per_class
@@ -91,74 +92,90 @@ class NBaIoTDataset:
         Returns:
             Tuple[pd.DataFrame, pd.Series]: (features_df, labels_series)
         """
-        all_features = []
-        all_labels = []
-        class_counts = {k: 0 for k in self.label_map.keys()}
-        
-        feature_names = get_feature_names()
-        
-        if not os.path.exists(self.data_dir):
-            logger.warning(f"Data directory {self.data_dir} does not exist. Returning empty dataset.")
-            return pd.DataFrame(columns=feature_names), pd.Series(dtype=int)
-
-        for root, dirs, files in os.walk(self.data_dir):
-            for file in sorted(files):
-                if not file.endswith('.csv'):
-                    continue
-                
-                # Determine label from file path (includes parent directory)
-                rel_path = os.path.relpath(os.path.join(root, file), self.data_dir).lower()
-                label = self._detect_label(rel_path)
-                
-                if label == -1:
-                    logger.warning(f"Could not determine label for {rel_path}, skipping.")
-                    continue
-                    
-                if class_counts[label] >= self.max_samples_per_class:
-                    continue
-                    
-                path = os.path.join(root, file)
-                try:
-                    # Auto-detect header: try reading first row and check if numeric
-                    peek = pd.read_csv(path, nrows=1, header=None)
-                    first_row_numeric = all(
-                        pd.to_numeric(peek.iloc[0], errors='coerce').notna()
-                    )
-                    
-                    if first_row_numeric:
-                        # No header row — raw numeric data (UCI format)
-                        df = pd.read_csv(path, header=None)
-                        if len(df.columns) == len(feature_names):
-                            df.columns = feature_names
-                    else:
-                        # Has header row (Kaggle format)
-                        df = pd.read_csv(path)
-                    
-                    # Compute how many samples we can take
-                    remaining = self.max_samples_per_class - class_counts[label]
-                    if len(df) > remaining:
-                        df = df.sample(n=remaining, random_state=42)
-                        
-                    all_features.append(df)
-                    all_labels.extend([label] * len(df))
-                    class_counts[label] += len(df)
-                    logger.info(f"Loaded {len(df)} samples from {rel_path} (label={self.label_map[label]})")
-                    
-                except Exception as e:
-                    logger.error(f"Error loading {path}: {e}")
-                    
-        if not all_features:
-            return pd.DataFrame(columns=feature_names), pd.Series(dtype=int)
-            
-        features_df = pd.concat(all_features, ignore_index=True)
-        labels_series = pd.Series(all_labels)
-        
-        logger.info(f"Loaded {len(features_df)} total samples across {sum(1 for v in class_counts.values() if v > 0)} classes")
-        
+        if self.max_samples_per_class < 1:
+            raise ValueError("max_samples_per_class must be positive")
+        names = get_feature_names()
+        groups = {}
+        for path in sorted(Path(self.data_dir).rglob('*.csv')):
+            rel = path.relative_to(self.data_dir).as_posix()
+            label = self._detect_label(rel.lower())
+            if label >= 0:
+                groups.setdefault(label, []).append((path, rel))
+        frames, labels, metadata = [], [], []
+        self.sources = []
+        for label, files in sorted(groups.items()):
+            # Equal quotas per capture (one capture per device/class in N-BaIoT).
+            # Short captures are retained in full; unused quota is not reassigned.
+            base, extra = divmod(self.max_samples_per_class, len(files))
+            if base == 0:
+                raise ValueError("Sample cap must cover every capture in each class")
+            for position, (path, rel) in enumerate(files):
+                quota = base + (position < extra)
+                peek = pd.read_csv(path, nrows=1, header=None)
+                numeric = pd.to_numeric(peek.iloc[0], errors='coerce').notna().all()
+                frame = pd.read_csv(path, header=None if numeric else 0)
+                if numeric:
+                    if frame.shape[1] != len(names):
+                        raise ValueError(f"{rel}: expected {len(names)} columns")
+                    frame.columns = names
+                elif list(frame.columns) != names:
+                    raise ValueError(f"{rel}: feature schema/order does not match N-BaIoT")
+                if not np.isfinite(frame.to_numpy(dtype=float)).all():
+                    raise ValueError(f"{rel}: non-finite input values")
+                if len(frame) > quota:
+                    frame = frame.sample(n=quota, random_state=self.seed).sort_index()
+                source_id = len(self.sources)
+                digest = hashlib.sha256()
+                with path.open('rb') as stream:
+                    for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                        digest.update(chunk)
+                device = self.device_id(rel)
+                self.sources.append(dict(path=rel, device=device, label=label,
+                                         sha256=digest.hexdigest(), sampled_rows=len(frame)))
+                metadata.append(pd.DataFrame({'source_id': source_id,
+                    'device': device, 'row': frame.index.to_numpy()}, index=range(len(frame))))
+                frames.append(frame)
+                labels.extend([label] * len(frame))
+                logger.info("Loaded %s: %d samples", rel, len(frame))
+        if not frames:
+            return pd.DataFrame(columns=names), pd.Series(dtype=int)
+        self.metadata = pd.concat(metadata, ignore_index=True)
+        features = pd.concat(frames, ignore_index=True)
         if self.selected_features is not None:
-            features_df = features_df.iloc[:, self.selected_features]
-            
-        return features_df, labels_series
+            features = features.iloc[:, self.selected_features]
+        return features, pd.Series(labels, dtype=int)
+
+    @staticmethod
+    def device_id(rel_path: str) -> str:
+        """Canonical device IDs for UCI flat and Kaggle directory layouts."""
+        match = re.match(r"^([1-9])(?:[./])", rel_path)
+        if match:
+            return match.group(1)
+        aliases = {'danmini': '1', 'ecobee': '2', 'ennio': '3',
+                   'philips': '4', 'samsung': '5', '737e': '6',
+                   '838': '7', '1002': '8', '1003': '9'}
+        for keyword, device in aliases.items():
+            if keyword in rel_path.lower():
+                return device
+        return rel_path.split('/')[0]
+
+    def device_split_indices(self, y, val_devices=('8',), test_devices=('9',)):
+        """Hold out whole devices; require every class in every partition."""
+        val_devices, test_devices = set(val_devices), set(test_devices)
+        known = set(self.metadata.device)
+        if not val_devices or not test_devices or val_devices & test_devices:
+            raise ValueError("Validation and test devices must be nonempty and disjoint")
+        if not (val_devices | test_devices) <= known:
+            raise ValueError("Requested held-out device is absent from the dataset")
+        device = self.metadata.device
+        masks = {'train': ~device.isin(val_devices | test_devices),
+                 'val': device.isin(val_devices), 'test': device.isin(test_devices)}
+        indices = {name: np.flatnonzero(mask) for name, mask in masks.items()}
+        expected = set(self.label_map)
+        for name, idx in indices.items():
+            if set(np.asarray(y)[idx]) != expected:
+                raise ValueError(f"{name} partition must contain all 11 classes")
+        return indices
 
     def _detect_label(self, rel_path: str) -> int:
         """
@@ -204,7 +221,7 @@ class NBaIoTDataset:
         
         return -1
 
-    def select_features(self, X: pd.DataFrame, y: pd.Series, method: str = 'mutual_info', n_features: int = 20) -> Tuple[np.ndarray, List[int]]:
+    def select_features(self, X: pd.DataFrame, y: pd.Series, method: str = 'mutual_info', n_features: int = 20, correlation_limit: Optional[float] = None) -> Tuple[np.ndarray, List[int]]:
         """
         Perform feature selection.
         
@@ -218,12 +235,29 @@ class NBaIoTDataset:
             Tuple[np.ndarray, List[int]]: (selected_X, selected_feature_indices)
         """
         logger.info(f"Selecting top {n_features} features using method: {method}")
+        if not 1 <= n_features <= X.shape[1]:
+            raise ValueError("n_features is outside the available feature count")
         X_arr = X.values
         y_arr = y.values
         
         if method == 'mutual_info':
-            mi = mutual_info_classif(X_arr, y_arr)
-            top_indices = np.argsort(mi)[-n_features:][::-1]
+            mi = mutual_info_classif(X_arr, y_arr, random_state=self.seed)
+            ranking = np.argsort(-mi, kind='stable')
+            if correlation_limit is None:
+                top_indices = ranking[:n_features]
+            else:
+                if not 0 < correlation_limit <= 1:
+                    raise ValueError("correlation_limit must lie in (0, 1]")
+                correlations = X.corr().abs().fillna(0).to_numpy()
+                chosen = []
+                for idx in ranking:
+                    if all(correlations[idx, old] < correlation_limit for old in chosen):
+                        chosen.append(int(idx))
+                    if len(chosen) == n_features:
+                        break
+                if len(chosen) < n_features:
+                    raise ValueError("Too few distinct features for requested correlation limit")
+                top_indices = np.asarray(chosen)
             
         elif method == 'variance':
             variances = np.var(X_arr, axis=0)
@@ -236,7 +270,7 @@ class NBaIoTDataset:
             
             X_filtered = X.drop(columns=to_drop)
             # fallback to MI for top k of the remaining
-            mi = mutual_info_classif(X_filtered.values, y_arr)
+            mi = mutual_info_classif(X_filtered.values, y_arr, random_state=self.seed)
             top_filtered_idx = np.argsort(mi)[-n_features:][::-1]
             top_columns = X_filtered.columns[top_filtered_idx]
             
@@ -326,7 +360,8 @@ class NBaIoTDataset:
             loaders[split_name] = DataLoader(
                 dataset, 
                 batch_size=batch_size, 
-                shuffle=(split_name == 'train')
+                shuffle=(split_name == 'train'),
+                generator=torch.Generator().manual_seed(self.seed)
             )
             
         return loaders
@@ -339,9 +374,12 @@ class NBaIoTDataset:
             feature_indices (List[int]): Indices of the selected features.
             path (str): Path to save the JSON config.
         """
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        if len(feature_indices) != len(self.scaler.mean_):
+            raise ValueError("Scaler dimensions must match selected feature order")
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
         config = {
             'selected_features': [int(i) for i in feature_indices],
+            'feature_names': [get_feature_names()[int(i)] for i in feature_indices],
             'scaler': {
                 'mean': self.scaler.mean_.tolist(),
                 'scale': self.scaler.scale_.tolist()

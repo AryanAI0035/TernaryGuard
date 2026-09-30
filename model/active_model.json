@@ -1,0 +1,21 @@
+{
+  "run_id": "phase3_final_seed42",
+  "checkpoint": "checkpoints/phase3_final_seed42/ternary_2bit.pt",
+  "header": "model_weights.h",
+  "preprocessing": "model/feature_config.json",
+  "manifest": "model/export_manifest.json",
+  "golden_vectors": "model/golden_vectors.npz",
+  "architecture": {
+    "input_dim": 20,
+    "hidden_dims": [
+      64,
+      32
+    ],
+    "output_dim": 11,
+    "use_rmsnorm": true,
+    "ternary_output": true
+  },
+  "selection": "Nonzero recall for every validation class, then highest validation macro-F1; no test metrics used",
+  "status": "Validated research reference; class-level quality blocks complete 11-class deployment",
+  "minimum_test_class_recall": 0.00018001800180018
+}

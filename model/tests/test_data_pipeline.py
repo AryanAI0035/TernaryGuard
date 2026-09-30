@@ -290,18 +290,18 @@ class TestFeatureConfig:
         """Save and load feature config, verify round-trip."""
         X, y = synthetic_data
         ds = NBaIoTDataset()
-        ds.preprocess(X, fit=True)
+        feature_indices = [0, 5, 10, 42, 100]
+        ds.preprocess(X[:, feature_indices], fit=True)
 
         config_path = str(tmp_path / "test_config.json")
-        feature_indices = [0, 5, 10, 42, 100]
         ds.save_feature_config(feature_indices, path=config_path)
 
         loaded = NBaIoTDataset.load_feature_config(path=config_path)
 
         assert loaded['selected_features'] == feature_indices
         assert 'scaler' in loaded
-        assert len(loaded['scaler']['mean']) == 115
-        assert len(loaded['scaler']['scale']) == 115
+        assert len(loaded['scaler']['mean']) == 5
+        assert len(loaded['scaler']['scale']) == 5
 
 
 # ──────────────── Feature Selection ────────────────

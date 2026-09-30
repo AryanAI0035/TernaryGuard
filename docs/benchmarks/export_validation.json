@@ -1,0 +1,21 @@
+{
+  "samples": 69040,
+  "prediction_disagreements": 0,
+  "max_abs_logit_error": 1.1444091796875e-05,
+  "atol": 2e-05,
+  "rtol": 2e-05,
+  "golden_samples_per_class": [
+    24,
+    24,
+    24,
+    24,
+    24,
+    24,
+    24,
+    24,
+    24,
+    24,
+    24
+  ],
+  "oracle": "NumPy reader of exported C header; float32 arithmetic"
+}

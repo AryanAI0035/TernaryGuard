@@ -16,7 +16,7 @@ This requires a hardware multiplier for every $W_{ji} \cdot x_i$ term — multip
 | $0$ | skip | nothing |
 | $-1$ | $-x$ (subtract) | 1 adder (inverted) |
 
-**No multiplier is ever needed.** The entire MAC array reduces to a set of adders with multiplexed sign control. This is the core thesis of TernaryGuard — the same architectural simplification enables deployment on a workstation (where it saves cycles), on an ATmega328P (where it fits in 2KB of RAM), and on an FPGA (where it eliminates DSP blocks entirely).
+**No weight multiplier is needed inside the ternary dot product.** The entire MAC array reduces to a set of adders with multiplexed sign control. This is the core thesis of TernaryGuard — the same architectural simplification enables deployment on a workstation (where it saves cycles), on an ATmega328P (where it fits in 2KB of RAM), and on an FPGA (where the dot-product datapath can avoid multiplier DSP blocks; full-network utilization remains unmeasured).
 
 Each ternary weight carries $\log_2 3 \approx 1.58$ bits of information, hence the "1.58-bit" designation from the BitNet b1.58 paper [1].
 
@@ -48,7 +48,7 @@ The forward pass of a ternary linear layer computes:
 
 $$y = \alpha \cdot (\tilde{W} \mathbf{x}) + \mathbf{b}$$
 
-The ternary matrix-vector product $\tilde{W}\mathbf{x}$ involves only additions and subtractions. The scalar multiplication by $\alpha$ is applied **once** to the entire output vector — a single scalar multiply per layer, not per weight.
+The ternary matrix-vector product $\tilde{W}\mathbf{x}$ involves only additions and subtractions. The scalar multiplication by $\alpha$ is applied **once** to the entire output vector — one multiplication per output element, rather than per weight. For 32, 16, and 11 outputs this is 59 multiplications, in addition to normalization costs.
 
 ## 3. Straight-Through Estimator (STE)
 
@@ -72,7 +72,7 @@ The STE is a biased gradient estimator — it ignores the fact that small weight
 
 1. **The optimizer accumulates many small gradient steps.** Even if a single update doesn't cross a quantization threshold, the accumulated momentum in Adam will eventually push the latent weight across.
 2. **The latent weights remain in full precision.** The optimizer sees a smooth loss landscape through the STE, and the quantization acts as a form of regularization.
-3. **The gradient direction is correct.** Even though the magnitude is approximate, the sign of the STE gradient correctly indicates whether the weight should increase or decrease.
+3. **The gradient is a surrogate.** Its direction is not guaranteed to match the true discrete objective; effectiveness must be checked empirically.
 
 ### 3.4 Training Loop Summary
 
@@ -80,14 +80,14 @@ The STE is a biased gradient estimator — it ignores the fact that small weight
 ┌─────────────────────────────────────────────────────────┐
 │  for each training step:                                 │
 │    1. W_ternary = quantize(W_latent)    # forward only   │
-│    2. y = W_ternary @ x * scale + bias  # no multiplies  │
+│    2. y = W_ternary @ x * scale + bias  # ternary dot product plus output scaling  │
 │    3. loss = criterion(y, target)                        │
 │    4. loss.backward()                   # STE: ∂L/∂W_latent = ∂L/∂W_ternary │
 │    5. optimizer.step()                  # updates W_latent (float32) │
 └─────────────────────────────────────────────────────────┘
 ```
 
-The key insight: **W_latent is never ternary**. It's a full-precision tensor that the optimizer freely updates. Only the **forward-pass projection** $Q(W_\text{latent})$ is ternary. This means the model can explore the weight space continuously while the inference path remains integer-only.
+The key insight: **W_latent is never ternary**. It's a full-precision tensor that the optimizer freely updates. Only the **forward-pass projection** $Q(W_\text{latent})$ is ternary. This means the model can explore the weight space continuously while the weight dot products can be implemented with add/subtract/skip. Activations, biases, scales, and RMSNorm currently remain floating-point.
 
 ## 4. RMSNorm for Activation Scaling
 
@@ -108,7 +108,7 @@ For a model with $N$ ternary weights:
 | Component | Bits per element | Bytes |
 |:---|:---:|:---:|
 | Ternary weights (2-bit packed) | 2 | $\lceil N \times 2 / 8 \rceil$ |
-| Bias (int8) | 8 | $B$ (number of biases) |
+| Bias (float32) | 32 | $4B$ (number of biases) |
 | Scale factors (float32) | 32 | $4 \times L$ (number of layers) |
 | RMSNorm gamma (float32) | 32 | $4 \times D$ (total feature dims) |
 
@@ -116,10 +116,10 @@ For a model with $N$ ternary weights:
 - Input(20) → Hidden(16) → Hidden(8) → Output(2)
 - Ternary weights: $20 \times 16 + 16 \times 8 + 8 \times 2 = 464$
 - Packed (2 bits each): $\lceil 464 \times 2 / 8 \rceil = 116$ bytes
-- Bias: $16 + 8 + 2 = 26$ bytes (int8)
+- Bias: $(16 + 8 + 2) × 4 = 104$ bytes (float32)
 - Scales: $3 \times 4 = 12$ bytes
 - RMSNorm gamma: $(20 + 16) \times 4 = 144$ bytes
-- **Total: 298 bytes** — well within the 32KB flash / 2KB RAM constraints of the ATmega328P.
+- **Total: 376 bytes of model parameters/scales (excluding dimension and epsilon metadata)** — well within the 32KB flash / 2KB RAM constraints of the ATmega328P.
 
 ## 6. What the Unit Tests Verify
 
@@ -141,3 +141,8 @@ For a model with $N$ ternary weights:
 [2] Y. Bengio, N. Léonard, and A. Courville, "Estimating or Propagating Gradients Through Stochastic Neurons for Conditional Computation," arXiv:1308.3432, 2013.
 
 [3] B. Zhang and R. Sennrich, "Root Mean Square Layer Normalization," NeurIPS 2019.
+
+
+Version-2 export preserves FP32 biases. Its numerical equivalence is checked by
+reading the generated C header independently and comparing test-set logits and
+classifications. See `architecture_budget.md` for the current 11-class model.

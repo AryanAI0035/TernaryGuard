@@ -18,10 +18,11 @@ import argparse
 import sys
 from pathlib import Path
 
+import matplotlib
+matplotlib.use("Agg")  # File-only plotting also works in headless environments.
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
 # ──────────────── Configuration ────────────────
 
@@ -47,7 +48,7 @@ plt.rcParams.update({
     "figure.facecolor": "white",
 })
 
-sns.set_style("whitegrid")
+plt.rcParams.update({"axes.grid": True, "grid.alpha": 0.3, "axes.axisbelow": True})
 
 
 def load_results(path: Path = RESULTS_FILE) -> pd.DataFrame:
@@ -73,18 +74,19 @@ def plot_accuracy_vs_quantization(df: pd.DataFrame, output_dir: Path) -> None:
 
     for ax, metric in zip(axes, ["accuracy", "f1_score"]):
         for model_type in ["fp32", "int8", "ternary"]:
-            subset = phase3[phase3["model_type"] == model_type]
+            subset = phase3[(phase3["model_type"] == model_type) & ~phase3["experiment"].str.startswith("ablation_")]
             if not subset.empty:
                 ax.bar(
-                    model_type.upper(),
+                    ("INT8 (sim.)" if model_type == "int8" else model_type.upper()),
                     subset[metric].values[0],
                     color=COLORS.get(model_type, "#999"),
                     edgecolor="black",
                     linewidth=0.5,
                 )
-        ax.set_ylabel(metric.replace("_", " ").title())
+        metric_label = "Weighted F1" if metric == "f1_score" else "Accuracy"
+        ax.set_ylabel(metric_label)
         ax.set_ylim(0, 1.05)
-        ax.set_title(f"{metric.replace('_', ' ').title()} vs Quantization Level")
+        ax.set_title(f"{metric_label} vs Weight Quantization")
 
     fig.suptitle("TernaryGuard — Accuracy vs Quantization", fontweight="bold")
     fig.tight_layout()
@@ -218,7 +220,7 @@ def plot_ablation_sweep(df: pd.DataFrame, output_dir: Path) -> None:
         return
 
     # Need multiple hidden_dims entries to make a sweep plot
-    ablation = phase3[phase3["hidden_dims"].notna() & phase3["f1_score"].notna()]
+    ablation = phase3[phase3["experiment"].str.startswith("ablation_") & phase3["f1_score"].notna()]
     if len(ablation) < 2:
         print("  Skipping ablation plot — need ≥2 hidden_dims entries for a sweep.")
         return
@@ -239,7 +241,7 @@ def plot_ablation_sweep(df: pd.DataFrame, output_dir: Path) -> None:
             )
 
     ax.set_xlabel("Hidden Layer Width")
-    ax.set_ylabel("F1 Score")
+    ax.set_ylabel("Weighted F1 Score")
     ax.set_ylim(0, 1.05)
     ax.legend()
     ax.set_title("TernaryGuard — Architecture Ablation (Hidden Width Sweep)", fontweight="bold")
@@ -251,6 +253,8 @@ def plot_ablation_sweep(df: pd.DataFrame, output_dir: Path) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="Plot TernaryGuard experiment results")
+    parser.add_argument("--results", type=Path, default=RESULTS_FILE, help="Results CSV to plot")
+    parser.add_argument("--run-id", help="Run to plot; defaults to the latest recorded run")
     parser.add_argument("--phase", type=int, help="Filter to a specific phase")
     parser.add_argument(
         "--output",
@@ -264,11 +268,18 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print("TernaryGuard — Generating benchmark plots")
-    print(f"  Source: {RESULTS_FILE}")
+    print(f"  Source: {args.results}")
     print(f"  Output: {output_dir}")
     print()
 
-    df = load_results()
+    df = load_results(args.results)
+
+    if "run_id" in df.columns:
+        run_id = args.run_id or df["run_id"].dropna().iloc[-1]
+        df = df[df["run_id"] == run_id]
+        if df.empty:
+            parser.error(f"No results for run {run_id}")
+        print(f"  Run: {run_id}")
 
     if args.phase is not None:
         df = df[df["phase"] == args.phase]

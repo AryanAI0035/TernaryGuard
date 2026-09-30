@@ -45,21 +45,29 @@ Input(20) → RMSNorm(20) → TernaryLinear(20, 32) → ReLU
 
 ### RAM Budget (2,048 bytes)
 
-RMSNorm gamma is placed in PROGMEM alongside weights (constant after training,
-read via `pgm_read_float()`, accessed once per layer — no inner-loop penalty).
-For the conservative estimate with gamma in RAM, call
-`estimate_ram_usage(gamma_in_progmem=False)` → 516B model subtotal.
+**PROGMEM rule:** all trained constants go in flash via PROGMEM. Only mutable
+runtime state (activation buffers, input buffer, stack) lives in RAM.
+
+Access pattern for PROGMEM constants (via `pgm_read_float()`/`pgm_read_byte()`):
+- Weights: read in the inner accumulate loop (highest frequency)
+- Biases: read once per output neuron
+- RMSNorm gamma: read once per input feature during normalization —
+  52 reads total (20+32), ~3µs at 16MHz
+- Scale factors: read once per layer, broadcast — 3 reads total
+
+For the conservative estimate with all constants in RAM, call
+`estimate_ram_usage(constants_in_progmem=False)` → 516B model subtotal.
 
 | Component | Bytes | Calculation | Source |
 |-----------|-------|-------------|--------|
 | Activation buffers (ping-pong) | 128 | 2 × 32 × 2 (int16, max hidden dim) | `estimate_ram_usage()` |
 | Input buffer | 40 | 20 × 2 (int16 features from UART) | `estimate_ram_usage()` |
-| Scale factors | 12 | 3 × 4 (float32, always in RAM) | `estimate_ram_usage()` |
-| RMSNorm gamma | 0 | In PROGMEM (208B in flash, not RAM) | `estimate_ram_usage(gamma_in_progmem=True)` |
+| Scale factors | 0 | In PROGMEM (12B flash, 3 reads/inference) | `estimate_ram_usage()` |
+| RMSNorm gamma | 0 | In PROGMEM (208B flash, 52 reads/inference) | `estimate_ram_usage()` |
 | Stack reserve | 128 | Function calls, locals | `estimate_ram_usage()` |
-| **Model subtotal** | **308** | | **Code-verified** |
+| **Model subtotal** | **296** | | **Code-verified** |
 | Serial buffer (Arduino runtime) | 64 | UART RX buffer | Manual estimate |
-| **Grand total** | **372** | **18.2% of 2KB** ✅ | |
+| **Grand total** | **360** | **17.6% of 2KB** ✅ | |
 
 ### Compared to Phase 1 Example (20→16→8→2)
 
@@ -67,7 +75,7 @@ For the conservative estimate with gamma in RAM, call
 |--------|---------------------|----------------------|
 | Ternary weights | 464 | 1,328 |
 | Flash (model only) | 298 B | 611 B |
-| RAM (runtime) | ~196 B | ~372 B |
+| RAM (runtime) | ~184 B | ~360 B |
 | Output classes | 2 | 11 |
 | Capacity | Minimal | Production-ready |
 

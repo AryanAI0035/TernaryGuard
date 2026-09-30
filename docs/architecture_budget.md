@@ -45,16 +45,21 @@ Input(20) → RMSNorm(20) → TernaryLinear(20, 32) → ReLU
 
 ### RAM Budget (2,048 bytes)
 
+RMSNorm gamma is placed in PROGMEM alongside weights (constant after training,
+read via `pgm_read_float()`, accessed once per layer — no inner-loop penalty).
+For the conservative estimate with gamma in RAM, call
+`estimate_ram_usage(gamma_in_progmem=False)` → 516B model subtotal.
+
 | Component | Bytes | Calculation | Source |
 |-----------|-------|-------------|--------|
 | Activation buffers (ping-pong) | 128 | 2 × 32 × 2 (int16, max hidden dim) | `estimate_ram_usage()` |
 | Input buffer | 40 | 20 × 2 (int16 features from UART) | `estimate_ram_usage()` |
-| Scale factors | 12 | 3 × 4 (float32) | `estimate_ram_usage()` |
-| RMSNorm gamma | 208 | (20 + 32) × 4 (float32, conservative) | `estimate_ram_usage()` |
+| Scale factors | 12 | 3 × 4 (float32, always in RAM) | `estimate_ram_usage()` |
+| RMSNorm gamma | 0 | In PROGMEM (208B in flash, not RAM) | `estimate_ram_usage(gamma_in_progmem=True)` |
 | Stack reserve | 128 | Function calls, locals | `estimate_ram_usage()` |
-| **Model subtotal** | **516** | | **Code-verified** |
+| **Model subtotal** | **308** | | **Code-verified** |
 | Serial buffer (Arduino runtime) | 64 | UART RX buffer | Manual estimate |
-| **Grand total** | **580** | **28.3% of 2KB** ✅ | |
+| **Grand total** | **372** | **18.2% of 2KB** ✅ | |
 
 ### Compared to Phase 1 Example (20→16→8→2)
 
@@ -62,7 +67,7 @@ Input(20) → RMSNorm(20) → TernaryLinear(20, 32) → ReLU
 |--------|---------------------|----------------------|
 | Ternary weights | 464 | 1,328 |
 | Flash (model only) | 298 B | 611 B |
-| RAM (runtime) | ~404 B | ~580 B |
+| RAM (runtime) | ~196 B | ~372 B |
 | Output classes | 2 | 11 |
 | Capacity | Minimal | Production-ready |
 

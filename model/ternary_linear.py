@@ -393,7 +393,8 @@ class TernaryMLP(nn.Module):
         }
 
     def estimate_ram_usage(self, activation_dtype_bytes: int = 2,
-                           stack_reserve: int = 128) -> Dict[str, int]:
+                           stack_reserve: int = 128,
+                           gamma_in_progmem: bool = True) -> Dict[str, int]:
         """
         Estimate peak runtime RAM usage for embedded inference.
 
@@ -401,15 +402,24 @@ class TernaryMLP(nn.Module):
         - **Input buffer**: input_dim × dtype_bytes
         - **Activation buffers**: two ping-pong buffers sized to the largest
           layer dimension (current + next), so we only need max(all dims) × dtype
-        - **Scale storage**: one float32 per TernaryLinear layer
+        - **Scale storage**: one float32 per TernaryLinear layer (always in RAM,
+          needed for the multiply after each layer's accumulate loop)
         - **Stack reserve**: function calls, locals, serial buffer
 
-        Weights are NOT counted here — they live in flash via PROGMEM.
+        Weights and biases live in flash via PROGMEM.
+
+        RMSNorm gamma is also placed in PROGMEM by default (gamma_in_progmem=True),
+        since it's constant after training and only accessed once per layer.
+        Set gamma_in_progmem=False for a conservative estimate where gamma is
+        copied to RAM at startup.
 
         Args:
             activation_dtype_bytes: Bytes per activation element. Default 2
                 (int16 fixed-point on AVR, no FPU).
             stack_reserve: Bytes reserved for stack + serial buffer.
+            gamma_in_progmem: If True (default), RMSNorm gamma is in PROGMEM
+                (read via pgm_read_float), not counted in RAM. Phase 5's C
+                code will implement this as const PROGMEM.
 
         Returns:
             dict with detailed RAM breakdown, total, and headroom vs 2KB.
@@ -430,12 +440,14 @@ class TernaryMLP(nn.Module):
         )
         scale_bytes = num_ternary_layers * 4
 
-        # RMSNorm gamma — on Arduino these may also be in PROGMEM,
-        # but conservatively assume RAM
-        rmsnorm_ram = sum(
-            m.gamma.numel() * 4
-            for m in self.modules() if isinstance(m, RMSNorm)
-        )
+        # RMSNorm gamma: PROGMEM (default) or RAM
+        if gamma_in_progmem:
+            rmsnorm_ram = 0  # read via pgm_read_float(), no RAM cost
+        else:
+            rmsnorm_ram = sum(
+                m.gamma.numel() * 4
+                for m in self.modules() if isinstance(m, RMSNorm)
+            )
 
         total = activation_bytes + input_bytes + scale_bytes + rmsnorm_ram + stack_reserve
         ram_limit = 2048  # ATmega328P
@@ -445,6 +457,7 @@ class TernaryMLP(nn.Module):
             "input_buffer_bytes": input_bytes,
             "scale_bytes": scale_bytes,
             "rmsnorm_ram_bytes": rmsnorm_ram,
+            "gamma_in_progmem": gamma_in_progmem,
             "stack_reserve": stack_reserve,
             "total_bytes": total,
             "ram_limit": ram_limit,

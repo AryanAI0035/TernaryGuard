@@ -78,8 +78,30 @@ excluded from Git. The malformed legacy results and old checkpoint/header are
 preserved under `checkpoints/legacy_phase3/`; the cleaned legacy CSV is explicitly
 marked invalidated under `docs/benchmarks/`.
 
-For the next modeling step, resolve the extremely weak TCP recall and agree on
-per-class acceptance criteria before declaring complete 11-class detection.
-The numerical reference and golden vectors can support phase-4 correctness work,
-but stronger model-quality, fixed-point, latency, memory, and hardware claims
-still require their respective validation.
+## Phase 3 freeze decision (2026-10-01)
+
+Repository reconciliation is complete: Antigravity's user-supplied command
+output and Codex's local checks identify the same repository at
+`/Users/aryanshukla/Desktop/TernaryGuard`, branch `master`, correction commit
+`c6cb9e8f826d3514ed811f8b3f6c4831e1dfa214`, and a clean working tree at that commit.
+
+**Decision: accept BASHLITE TCP class recall as a documented limitation of this
+frozen research reference (option A).** Retain all 11 classes and the selected
+checkpoint; do not retrain or remove a class for this freeze. The model correctly
+classifies only **1 of 5,555 BASHLITE TCP test examples (0.0180% recall)** and
+effectively fails to identify that attack type. This class-identification result
+does not by itself imply those examples are classified as benign. The paper must
+state this result explicitly alongside aggregate metrics. It must not claim
+reliable recognition of all 11 classes. BASHLITE UDP recall is 99.8560% in this
+reference; do not describe the TCP failure as a shared TCP/UDP recall failure.
+
+This settles the scope decision, not the model weakness. Keeping the verified
+checkpoint preserves a stable reference for evaluating the embedded engine and
+avoids further tuning against an already inspected test device. Any future
+model-quality iteration needs predefined per-class acceptance criteria and a
+fresh evaluation protocol before claiming improved generalization.
+
+The numerical reference and golden vectors can support phase-4 correctness work.
+Full 11-class deployment remains unsupported; fixed-point, latency, memory, and
+hardware claims still require their respective validation. Phase 4 implementation
+has not started as part of this decision.

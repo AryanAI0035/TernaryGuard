@@ -1,0 +1,96 @@
+Processing nano_old (board: nanoatmega328; platform: atmelavr@5.3.0; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/atmelavr/nanoatmega328.html
+PLATFORM: Atmel AVR (5.3.0) > Arduino Nano ATmega328
+HARDWARE: ATMEGA328P 16MHz, 2KB RAM, 30KB Flash
+DEBUG: Current (avr-stub) External (avr-stub, simavr)
+PACKAGES: 
+ - framework-arduino-avr @ 5.4.0 
+ - tool-avrdude @ 1.60300.200527 (6.3.0) 
+ - toolchain-atmelavr @ 1.70300.191015 (7.3.0)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 5 compatible libraries
+Scanning dependencies...
+No dependencies
+Building in release mode
+Compiling .pio/build/nano_old/src/main.cpp.o
+Compiling .pio/build/nano_old/src/ternary_avr.c.o
+Archiving .pio/build/nano_old/libFrameworkArduinoVariant.a
+Compiling .pio/build/nano_old/FrameworkArduino/CDC.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/HardwareSerial.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/HardwareSerial0.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/HardwareSerial1.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/HardwareSerial2.cpp.o
+Indexing .pio/build/nano_old/libFrameworkArduinoVariant.a
+Compiling .pio/build/nano_old/FrameworkArduino/HardwareSerial3.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/IPAddress.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/PluggableUSB.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/Print.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/Stream.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/Tone.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/USBCore.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/WInterrupts.c.o
+Compiling .pio/build/nano_old/FrameworkArduino/WMath.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/WString.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/abi.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/hooks.c.o
+Compiling .pio/build/nano_old/FrameworkArduino/main.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/new.cpp.o
+Compiling .pio/build/nano_old/FrameworkArduino/wiring.c.o
+Compiling .pio/build/nano_old/FrameworkArduino/wiring_analog.c.o
+Compiling .pio/build/nano_old/FrameworkArduino/wiring_digital.c.o
+Compiling .pio/build/nano_old/FrameworkArduino/wiring_pulse.S.o
+/private/tmp/ternaryguard-phase5-pio/packages/framework-arduino-avr/cores/arduino/new.cpp: In function 'void* operator new(std::size_t, std::nothrow_t)':
+/private/tmp/ternaryguard-phase5-pio/packages/framework-arduino-avr/cores/arduino/new.cpp:59:60: warning: unused parameter 'tag' [-Wunused-parameter]
+ void * operator new(std::size_t size, const std::nothrow_t tag) noexcept {
+                                                            ^~~
+/private/tmp/ternaryguard-phase5-pio/packages/framework-arduino-avr/cores/arduino/new.cpp: In function 'void* operator new [](std::size_t, const std::nothrow_t&)':
+/private/tmp/ternaryguard-phase5-pio/packages/framework-arduino-avr/cores/arduino/new.cpp:68:63: warning: unused parameter 'tag' [-Wunused-parameter]
+ void * operator new[](std::size_t size, const std::nothrow_t& tag) noexcept {
+                                                               ^~~
+/private/tmp/ternaryguard-phase5-pio/packages/framework-arduino-avr/cores/arduino/new.cpp: In function 'void operator delete(void*, const std::nothrow_t&)':
+/private/tmp/ternaryguard-phase5-pio/packages/framework-arduino-avr/cores/arduino/new.cpp:103:55: warning: unused parameter 'tag' [-Wunused-parameter]
+ void operator delete(void* ptr, const std::nothrow_t& tag) noexcept {
+                                                       ^~~
+/private/tmp/ternaryguard-phase5-pio/packages/framework-arduino-avr/cores/arduino/new.cpp: In function 'void operator delete [](void*, const std::nothrow_t&)':
+/private/tmp/ternaryguard-phase5-pio/packages/framework-arduino-avr/cores/arduino/new.cpp:106:57: warning: unused parameter 'tag' [-Wunused-parameter]
+ void operator delete[](void* ptr, const std::nothrow_t& tag) noexcept {
+                                                         ^~~
+Compiling .pio/build/nano_old/FrameworkArduino/wiring_pulse.c.o
+Compiling .pio/build/nano_old/FrameworkArduino/wiring_shift.c.o
+Archiving .pio/build/nano_old/libFrameworkArduino.a
+Indexing .pio/build/nano_old/libFrameworkArduino.a
+Linking .pio/build/nano_old/firmware.elf
+Checking size .pio/build/nano_old/firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [======    ]  59.2% (used 1212 bytes from 2048 bytes)
+Flash: [===       ]  26.3% (used 8076 bytes from 30720 bytes)
+Building .pio/build/nano_old/firmware.hex
+Configuring upload protocol...
+AVAILABLE: arduino
+CURRENT: upload_protocol = arduino
+Looking for upload port...
+Using manually specified: /dev/cu.usbserial-A5069RR4
+Uploading .pio/build/nano_old/firmware.hex
+avrdude: stk500_getsync() attempt 1 of 10: not in sync: resp=0x00
+avrdude: stk500_getsync() attempt 2 of 10: not in sync: resp=0x00
+avrdude: stk500_getsync() attempt 3 of 10: not in sync: resp=0xe0
+avrdude: stk500_getsync() attempt 4 of 10: not in sync: resp=0xe0
+avrdude: stk500_getsync() attempt 5 of 10: not in sync: resp=0xe0
+avrdude: stk500_getsync() attempt 6 of 10: not in sync: resp=0xe0
+avrdude: stk500_getsync() attempt 7 of 10: not in sync: resp=0x00
+avrdude: stk500_getsync() attempt 8 of 10: not in sync: resp=0xe0
+avrdude: stk500_getsync() attempt 9 of 10: not in sync: resp=0xe0
+avrdude: stk500_getsync() attempt 10 of 10: not in sync: resp=0x00
+
+avrdude done.  Thank you.
+
+*** [upload] Error 1
+========================== [FAILED] Took 7.78 seconds ==========================
+
+Environment    Status    Duration
+-------------  --------  ------------
+nano_old       FAILED    00:00:07.777
+==================== 1 failed, 0 succeeded in 00:00:07.777 ====================

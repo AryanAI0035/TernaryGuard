@@ -1,4 +1,7 @@
-# Phase 5 progress — NOT hardware validated
+# Phase 5 pre-hardware snapshot
+
+**Superseded by [physical Nano validation](phase5_hardware_validation.md).**
+The statements below record the earlier, unconnected-board state.
 
 The AVR port builds, but no Nano USB serial device is connected/visible. No flash
 attempt, physical serial validation, board latency measurement or SRAM peak

@@ -1,0 +1,57 @@
+{
+  "subset": {
+    "physical_rows": 330,
+    "class_counts": [
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30
+    ],
+    "prediction_disagreements_vs_checkpoint": 0,
+    "all_reply_crcs_valid": true,
+    "all_firmware_statuses_zero": true,
+    "max_abs_logit_error_vs_checkpoint": 1.52587890625e-05,
+    "all_logits_within_export_tolerance": true,
+    "tcp_true_positive_test_indices": [
+      59782
+    ]
+  },
+  "tcp": {
+    "physical_rows": 5555,
+    "class_counts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5555,
+      0
+    ],
+    "prediction_disagreements_vs_checkpoint": 0,
+    "all_reply_crcs_valid": true,
+    "all_firmware_statuses_zero": true,
+    "max_abs_logit_error_vs_checkpoint": 3.814697265625e-06,
+    "all_logits_within_export_tolerance": true,
+    "tcp_true_positive_test_indices": [
+      59782
+    ]
+  },
+  "coverage": {
+    "physical_inferences": 5885,
+    "unique_frozen_test_rows": 5855,
+    "full_test_rows": 69040,
+    "full_dataset_hardware_coverage": false
+  },
+  "frozen_files_unchanged": true
+}

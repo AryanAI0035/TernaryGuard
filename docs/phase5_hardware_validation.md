@@ -1,0 +1,486 @@
+# Phase 5 physical Nano validation
+
+Hardware acceptance passed for the explicitly stated scope below. Firmware source
+commit: 3450918. Frozen model reference: fad0f0c, identified by model/active_model.json.
+No model, preprocessing parameters, checkpoint, Phase 3 results or Phase 4 engine
+was changed to obtain parity. Phase 6 has not started.
+
+## Physical execution and coverage
+
+Nano at /dev/cu.usbserial-A5069RR4 (FT232R interface, serial A5069RR4).
+Avrdude read ATmega328P signature 0x1e950f, wrote 8,076 bytes and verified them
+against the built HEX. The first new-bootloader and old-bootloader attempts did
+not synchronize. An explicit reset/sync probe was followed by a successful normal
+nano_new upload at 115200 baud; no signature override or bootloader burning occurred.
+All three upload logs are retained in docs/benchmarks/phase5_hardware/.
+
+Two physical passes used raw selected float32 features, so signed-log preprocessing
+and StandardScaler ran on the Nano, not on the host:
+
+| Pass | Physical rows | Prediction disagreements vs checkpoint | TCP true positives |
+|---|---:|---:|---:|
+| Stratified, seed 42, 30 rows per class | 330 | 0 | 1 in its 30 TCP rows |
+| Every frozen BASHLITE TCP row | 5,555 | 0 | **1/5,555** |
+
+There were 5,885 physical inferences over **5,855 unique frozen test rows**.
+This is not full 69,040-row hardware coverage. The one positive TCP row is frozen
+test index 59782, the same row detected by PyTorch. TCP recall remains
+1/5,555 = 0.01800180018%; this known limitation is preserved, not improved.
+
+All saved raw replies were independently decoded again: every CRC, sequence and
+firmware status passed. The board's predictions match both its returned logit
+argmax and a direct live evaluation of the frozen PyTorch checkpoint. All logits
+satisfy atol=rtol=2e-5. Maximum absolute error vs PyTorch: 1.52587890625e-05 for
+the stratified pass and 3.814697265625e-06 for the full TCP pass.
+
+## Preprocessing precision decision
+
+On-device float32 preprocessing is accepted for this hardware-validation scope.
+AVR double is 4 bytes (compile-time assertion). The exact AVR C source had already
+been evaluated at float32 precision on the host over all 69,040 rows with zero
+prediction disagreements; physical execution now independently checks AVR-libc
+behavior on the 5,855 unique rows above. This does not imply that the remaining
+63,185 rows have been executed on AVR. Full host validation and the scalar-log
+implementation details remain in phase5_progress.md and engine-arduino/README.md.
+
+## Measured resources and timing
+
+| Quantity | Result | Measurement |
+|---|---:|---|
+| Application flash | 8,076 bytes | avr-size, then avrdude flash readback verification |
+| Static SRAM | 1,212 bytes | avr-size .data + .bss |
+| Observed SRAM high-water mark | 1,321 bytes | Physical SRAM canary scan, both passes |
+| Minimum untouched SRAM gap | 727 bytes | Physical SRAM canary scan, both passes |
+| Stratified median inference | 36.308 ms | Board micros(), 330 rows |
+| Stratified min–max | 34.804–36.760 ms | Board micros() |
+| TCP median inference | 34.816 ms | Board micros(), 5,555 rows |
+| TCP min–max | 34.816–36.760 ms | Board micros() |
+
+Timing includes Nano preprocessing and inference, excluding UART receive/transmit.
+Timer and serial interrupts run normally. D8/PB0 is instrumented, but no external
+logic-analyzer measurement was taken; these times come from micros(), with its
+4-us granularity at the configured 16 MHz. They are hardware readings, not host
+estimates. The canary high-water mark is a measured approximation of peak SRAM,
+not an exact cycle-by-cycle trace or a bound for every possible input/interrupt
+schedule. Startup leaves 32 bytes below the stack unpainted; marker coincidence
+also limits precision. No low-gap status or corruption occurred in these runs.
+The linked firmware has no heap allocator; no stack intrusion into the remaining
+727-byte painted gap was observed. 836 bytes from static subtraction alone was
+not used as a runtime peak measurement.
+
+AVR packed-dot disassembly and PROGMEM placement were verified before flashing
+and are recorded in phase5_progress.md. The flashed source is unchanged: the
+kernel and its integer add/sub helpers contain no multiply instructions or
+floating-point calls. Weights, biases, gammas, scales and scaler constants are
+in flash, read through pgm_read_byte/pgm_read_float. No dynamic allocation occurs.
+
+## Durable raw serial evidence
+
+The complete streams, including hexadecimal raw reply bytes and every decoded
+row, are losslessly archived as:
+
+- benchmarks/phase5_hardware/hardware-subset.jsonl.gz
+- benchmarks/phase5_hardware/hardware-tcp.jsonl.gz
+
+serial-log-hashes.json records compressed and uncompressed SHA-256 hashes.
+Hardware summary JSON, firmware/case hashes, and the independent PyTorch/CRC
+check are stored alongside them. The independent check source is preserved as
+independent-check-source.py.txt, and flashed-firmware.hex.gz preserves the exact
+HEX verified by avrdude (its uncompressed SHA-256 is in hardware-artifact-hashes.json).
+Example extraction:
+
+```sh
+gzip -dc docs/benchmarks/phase5_hardware/hardware-tcp.jsonl.gz
+```
+
+The 99-test suite passed before flashing; firmware and validator code were not
+changed during this hardware run. This commit only adds evidence and updates
+status documentation.
+
+## Successful flash
+
+```text
+$ PLATFORMIO_CORE_DIR=/private/tmp/ternaryguard-phase5-pio /private/tmp/ternaryguard-phase5-tools/bin/pio run -d engine-arduino -e nano_new -t upload --upload-port /dev/cu.usbserial-A5069RR4
+Processing nano_new (board: nanoatmega328new; platform: atmelavr@5.3.0; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/atmelavr/nanoatmega328new.html
+PLATFORM: Atmel AVR (5.3.0) > Arduino Nano ATmega328 (New Bootloader)
+HARDWARE: ATMEGA328P 16MHz, 2KB RAM, 30KB Flash
+DEBUG: Current (avr-stub) External (avr-stub, simavr)
+PACKAGES: 
+ - framework-arduino-avr @ 5.4.0 
+ - tool-avrdude @ 1.60300.200527 (6.3.0) 
+ - toolchain-atmelavr @ 1.70300.191015 (7.3.0)
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 5 compatible libraries
+Scanning dependencies...
+No dependencies
+Building in release mode
+Checking size .pio/build/nano_new/firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [======    ]  59.2% (used 1212 bytes from 2048 bytes)
+Flash: [===       ]  26.3% (used 8076 bytes from 30720 bytes)
+Configuring upload protocol...
+AVAILABLE: arduino
+CURRENT: upload_protocol = arduino
+Looking for upload port...
+Using manually specified: /dev/cu.usbserial-A5069RR4
+Uploading .pio/build/nano_new/firmware.hex
+
+avrdude: AVR device initialized and ready to accept instructions
+
+Reading | ################################################## | 100% 0.00s
+
+avrdude: Device signature = 0x1e950f (probably m328p)
+avrdude: reading input file ".pio/build/nano_new/firmware.hex"
+avrdude: writing flash (8076 bytes):
+
+Writing | ################################################## | 100% 0.96s
+
+avrdude: 8076 bytes of flash written
+avrdude: verifying flash memory against .pio/build/nano_new/firmware.hex:
+avrdude: load data flash data from input file .pio/build/nano_new/firmware.hex:
+avrdude: input file .pio/build/nano_new/firmware.hex contains 8076 bytes
+avrdude: reading on-chip flash data:
+
+Reading | ################################################## | 100% 0.82s
+
+avrdude: verifying ...
+avrdude: 8076 bytes of flash verified
+
+avrdude done.  Thank you.
+
+========================= [SUCCESS] Took 4.48 seconds =========================
+
+Environment    Status    Duration
+-------------  --------  ------------
+nano_new       SUCCESS   00:00:04.483
+========================= 1 succeeded in 00:00:04.483 =========================
+
+```
+
+## Actual linked size
+
+```text
+$ /private/tmp/ternaryguard-phase5-pio/packages/toolchain-atmelavr/bin/avr-size -C --mcu=atmega328p engine-arduino/.pio/build/nano_new/firmware.elf
+AVR Memory Usage
+----------------
+Device: atmega328p
+
+Program:    8076 bytes (24.6% Full)
+(.text + .data + .bootloader)
+
+Data:       1212 bytes (59.2% Full)
+(.data + .bss + .noinit)
+
+
+
+```
+
+## Physical subset run
+
+```text
+$ PYTHONPATH=/private/tmp/ternaryguard-phase5-tools/lib/python3.12/site-packages python3 engine-arduino/serial_validate.py --port /dev/cu.usbserial-A5069RR4 --cases /private/tmp/ternaryguard-phase5/serial_cases.npz --group subset --output /private/tmp/ternaryguard-phase5/hardware-subset.jsonl
+BOARD STARTUP TG_NANO_V1 raw_f32=1 preprocessed=2 double_bytes=4
+Real board replies: 30 / 330
+Real board replies: 60 / 330
+Real board replies: 90 / 330
+Real board replies: 120 / 330
+Real board replies: 150 / 330
+Real board replies: 180 / 330
+Real board replies: 210 / 330
+Real board replies: 240 / 330
+Real board replies: 270 / 330
+Real board replies: 300 / 330
+Real board replies: 330 / 330
+{
+  "scope": "PHYSICAL Nano via serial",
+  "port": "/dev/cu.usbserial-A5069RR4",
+  "mode": "raw",
+  "samples": 330,
+  "prediction_disagreements": 0,
+  "tcp_rows": 30,
+  "tcp_true_positives": 1,
+  "median_inference_us": 36308.0,
+  "min_inference_us": 34804,
+  "max_inference_us": 36760,
+  "min_untouched_gap_bytes": 727,
+  "watermark_used_sram_bytes": 1321,
+  "max_abs_logit_error": 1.33514404296875e-05
+}
+
+```
+
+## Physical tcp run
+
+```text
+$ PYTHONPATH=/private/tmp/ternaryguard-phase5-tools/lib/python3.12/site-packages python3 engine-arduino/serial_validate.py --port /dev/cu.usbserial-A5069RR4 --cases /private/tmp/ternaryguard-phase5/serial_cases.npz --group tcp --output /private/tmp/ternaryguard-phase5/hardware-tcp.jsonl
+BOARD STARTUP TG_NANO_V1 raw_f32=1 preprocessed=2 double_bytes=4
+Real board replies: 30 / 5555
+Real board replies: 60 / 5555
+Real board replies: 90 / 5555
+Real board replies: 120 / 5555
+Real board replies: 150 / 5555
+Real board replies: 180 / 5555
+Real board replies: 210 / 5555
+Real board replies: 240 / 5555
+Real board replies: 270 / 5555
+Real board replies: 300 / 5555
+Real board replies: 330 / 5555
+Real board replies: 360 / 5555
+Real board replies: 390 / 5555
+Real board replies: 420 / 5555
+Real board replies: 450 / 5555
+Real board replies: 480 / 5555
+Real board replies: 510 / 5555
+Real board replies: 540 / 5555
+Real board replies: 570 / 5555
+Real board replies: 600 / 5555
+Real board replies: 630 / 5555
+Real board replies: 660 / 5555
+Real board replies: 690 / 5555
+Real board replies: 720 / 5555
+Real board replies: 750 / 5555
+Real board replies: 780 / 5555
+Real board replies: 810 / 5555
+Real board replies: 840 / 5555
+Real board replies: 870 / 5555
+Real board replies: 900 / 5555
+Real board replies: 930 / 5555
+Real board replies: 960 / 5555
+Real board replies: 990 / 5555
+Real board replies: 1020 / 5555
+Real board replies: 1050 / 5555
+Real board replies: 1080 / 5555
+Real board replies: 1110 / 5555
+Real board replies: 1140 / 5555
+Real board replies: 1170 / 5555
+Real board replies: 1200 / 5555
+Real board replies: 1230 / 5555
+Real board replies: 1260 / 5555
+Real board replies: 1290 / 5555
+Real board replies: 1320 / 5555
+Real board replies: 1350 / 5555
+Real board replies: 1380 / 5555
+Real board replies: 1410 / 5555
+Real board replies: 1440 / 5555
+Real board replies: 1470 / 5555
+Real board replies: 1500 / 5555
+Real board replies: 1530 / 5555
+Real board replies: 1560 / 5555
+Real board replies: 1590 / 5555
+Real board replies: 1620 / 5555
+Real board replies: 1650 / 5555
+Real board replies: 1680 / 5555
+Real board replies: 1710 / 5555
+Real board replies: 1740 / 5555
+Real board replies: 1770 / 5555
+Real board replies: 1800 / 5555
+Real board replies: 1830 / 5555
+Real board replies: 1860 / 5555
+Real board replies: 1890 / 5555
+Real board replies: 1920 / 5555
+Real board replies: 1950 / 5555
+Real board replies: 1980 / 5555
+Real board replies: 2010 / 5555
+Real board replies: 2040 / 5555
+Real board replies: 2070 / 5555
+Real board replies: 2100 / 5555
+Real board replies: 2130 / 5555
+Real board replies: 2160 / 5555
+Real board replies: 2190 / 5555
+Real board replies: 2220 / 5555
+Real board replies: 2250 / 5555
+Real board replies: 2280 / 5555
+Real board replies: 2310 / 5555
+Real board replies: 2340 / 5555
+Real board replies: 2370 / 5555
+Real board replies: 2400 / 5555
+Real board replies: 2430 / 5555
+Real board replies: 2460 / 5555
+Real board replies: 2490 / 5555
+Real board replies: 2520 / 5555
+Real board replies: 2550 / 5555
+Real board replies: 2580 / 5555
+Real board replies: 2610 / 5555
+Real board replies: 2640 / 5555
+Real board replies: 2670 / 5555
+Real board replies: 2700 / 5555
+Real board replies: 2730 / 5555
+Real board replies: 2760 / 5555
+Real board replies: 2790 / 5555
+Real board replies: 2820 / 5555
+Real board replies: 2850 / 5555
+Real board replies: 2880 / 5555
+Real board replies: 2910 / 5555
+Real board replies: 2940 / 5555
+Real board replies: 2970 / 5555
+Real board replies: 3000 / 5555
+Real board replies: 3030 / 5555
+Real board replies: 3060 / 5555
+Real board replies: 3090 / 5555
+Real board replies: 3120 / 5555
+Real board replies: 3150 / 5555
+Real board replies: 3180 / 5555
+Real board replies: 3210 / 5555
+Real board replies: 3240 / 5555
+Real board replies: 3270 / 5555
+Real board replies: 3300 / 5555
+Real board replies: 3330 / 5555
+Real board replies: 3360 / 5555
+Real board replies: 3390 / 5555
+Real board replies: 3420 / 5555
+Real board replies: 3450 / 5555
+Real board replies: 3480 / 5555
+Real board replies: 3510 / 5555
+Real board replies: 3540 / 5555
+Real board replies: 3570 / 5555
+Real board replies: 3600 / 5555
+Real board replies: 3630 / 5555
+Real board replies: 3660 / 5555
+Real board replies: 3690 / 5555
+Real board replies: 3720 / 5555
+Real board replies: 3750 / 5555
+Real board replies: 3780 / 5555
+Real board replies: 3810 / 5555
+Real board replies: 3840 / 5555
+Real board replies: 3870 / 5555
+Real board replies: 3900 / 5555
+Real board replies: 3930 / 5555
+Real board replies: 3960 / 5555
+Real board replies: 3990 / 5555
+Real board replies: 4020 / 5555
+Real board replies: 4050 / 5555
+Real board replies: 4080 / 5555
+Real board replies: 4110 / 5555
+Real board replies: 4140 / 5555
+Real board replies: 4170 / 5555
+Real board replies: 4200 / 5555
+Real board replies: 4230 / 5555
+Real board replies: 4260 / 5555
+Real board replies: 4290 / 5555
+Real board replies: 4320 / 5555
+Real board replies: 4350 / 5555
+Real board replies: 4380 / 5555
+Real board replies: 4410 / 5555
+Real board replies: 4440 / 5555
+Real board replies: 4470 / 5555
+Real board replies: 4500 / 5555
+Real board replies: 4530 / 5555
+Real board replies: 4560 / 5555
+Real board replies: 4590 / 5555
+Real board replies: 4620 / 5555
+Real board replies: 4650 / 5555
+Real board replies: 4680 / 5555
+Real board replies: 4710 / 5555
+Real board replies: 4740 / 5555
+Real board replies: 4770 / 5555
+Real board replies: 4800 / 5555
+Real board replies: 4830 / 5555
+Real board replies: 4860 / 5555
+Real board replies: 4890 / 5555
+Real board replies: 4920 / 5555
+Real board replies: 4950 / 5555
+Real board replies: 4980 / 5555
+Real board replies: 5010 / 5555
+Real board replies: 5040 / 5555
+Real board replies: 5070 / 5555
+Real board replies: 5100 / 5555
+Real board replies: 5130 / 5555
+Real board replies: 5160 / 5555
+Real board replies: 5190 / 5555
+Real board replies: 5220 / 5555
+Real board replies: 5250 / 5555
+Real board replies: 5280 / 5555
+Real board replies: 5310 / 5555
+Real board replies: 5340 / 5555
+Real board replies: 5370 / 5555
+Real board replies: 5400 / 5555
+Real board replies: 5430 / 5555
+Real board replies: 5460 / 5555
+Real board replies: 5490 / 5555
+Real board replies: 5520 / 5555
+Real board replies: 5550 / 5555
+{
+  "scope": "PHYSICAL Nano via serial",
+  "port": "/dev/cu.usbserial-A5069RR4",
+  "mode": "raw",
+  "samples": 5555,
+  "prediction_disagreements": 0,
+  "tcp_rows": 5555,
+  "tcp_true_positives": 1,
+  "median_inference_us": 34816,
+  "min_inference_us": 34816,
+  "max_inference_us": 36760,
+  "min_untouched_gap_bytes": 727,
+  "watermark_used_sram_bytes": 1321,
+  "max_abs_logit_error": 3.814697265625e-06
+}
+
+```
+
+## Independent raw-reply and checkpoint verification
+
+```text
+$ PYTHONPATH=. python3 /private/tmp/ternaryguard-phase5/final_hardware_check.py
+{
+  "subset": {
+    "physical_rows": 330,
+    "class_counts": [
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30,
+      30
+    ],
+    "prediction_disagreements_vs_checkpoint": 0,
+    "all_reply_crcs_valid": true,
+    "all_firmware_statuses_zero": true,
+    "max_abs_logit_error_vs_checkpoint": 1.52587890625e-05,
+    "all_logits_within_export_tolerance": true,
+    "tcp_true_positive_test_indices": [
+      59782
+    ]
+  },
+  "tcp": {
+    "physical_rows": 5555,
+    "class_counts": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5555,
+      0
+    ],
+    "prediction_disagreements_vs_checkpoint": 0,
+    "all_reply_crcs_valid": true,
+    "all_firmware_statuses_zero": true,
+    "max_abs_logit_error_vs_checkpoint": 3.814697265625e-06,
+    "all_logits_within_export_tolerance": true,
+    "tcp_true_positive_test_indices": [
+      59782
+    ]
+  },
+  "coverage": {
+    "physical_inferences": 5885,
+    "unique_frozen_test_rows": 5855,
+    "full_test_rows": 69040,
+    "full_dataset_hardware_coverage": false
+  },
+  "frozen_files_unchanged": true
+}
+
+```

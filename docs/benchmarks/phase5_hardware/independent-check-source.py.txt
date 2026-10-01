@@ -1,0 +1,44 @@
+from pathlib import Path
+import binascii, hashlib, json, struct
+import numpy as np
+import torch
+from model.artifacts import load_ternary_bundle
+p=Path('/private/tmp/ternaryguard-phase5')
+cases=np.load(p/'serial_cases.npz',allow_pickle=False)
+torch.set_num_threads(1)
+model,_=load_ternary_bundle('checkpoints/phase3_final_seed42/ternary_2bit.pt')
+checks={}; all_indices=[]
+for group in ['subset','tcp']:
+    entries=[json.loads(line) for line in (p/('hardware-'+group+'.jsonl')).read_text().splitlines()]
+    records=[r for r in entries if 'prediction' in r]
+    frames=[r for r in entries if 'raw_reply_hex' in r]
+    indices=np.array([r['test_index'] for r in records])
+    np.testing.assert_array_equal(indices,cases[group])
+    assert len(records)==len(frames)
+    for seq,(record,frame) in enumerate(zip(records,frames)):
+        payload=bytes.fromhex(frame['raw_reply_hex'])
+        assert len(payload)==61 and binascii.crc_hqx(payload[:-2],0xffff)==struct.unpack('<H',payload[-2:])[0]
+        magic,version,status,sequence,pred,micros,gap,*logits=struct.unpack('<2sBBIBIH11f',payload[:-2])
+        assert magic==b'TR' and version==1 and status==0 and sequence==seq
+        assert pred==record['prediction'] and micros==record['inference_us'] and gap==record['untouched_gap_bytes']
+        np.testing.assert_array_equal(logits,record['logits'])
+    with torch.no_grad(): expected=model(torch.from_numpy(np.ascontiguousarray(cases['preprocessed'][indices]))).numpy()
+    actual=np.array([r['logits'] for r in records],dtype=np.float32)
+    assert np.isfinite(actual).all()
+    predicted=np.array([r['prediction'] for r in records])
+    np.testing.assert_array_equal(predicted,actual.argmax(1))
+    np.testing.assert_array_equal(predicted,expected.argmax(1))
+    np.testing.assert_allclose(actual,expected,atol=2e-5,rtol=2e-5)
+    tcp=cases['labels'][indices]==9
+    hits=indices[tcp & (predicted==9)].tolist()
+    checks[group]=dict(physical_rows=len(records),class_counts=np.bincount(cases['labels'][indices],minlength=11).tolist(),
+        prediction_disagreements_vs_checkpoint=0,all_reply_crcs_valid=True,all_firmware_statuses_zero=True,
+        max_abs_logit_error_vs_checkpoint=float(np.max(np.abs(actual-expected))),all_logits_within_export_tolerance=True,
+        tcp_true_positive_test_indices=hits)
+    if group=='tcp': assert len(hits)==1 and hits==[59782] and len(records)==5555
+    all_indices.extend(indices.tolist())
+checks['coverage']=dict(physical_inferences=len(all_indices),unique_frozen_test_rows=len(set(all_indices)),full_test_rows=69040,full_dataset_hardware_coverage=False)
+for path,digest in json.loads(Path('/private/tmp/ternaryguard-two-fixes/protected.json').read_text()).items():
+    assert hashlib.sha256(Path(path).read_bytes()).hexdigest()==digest,path
+checks['frozen_files_unchanged']=True
+print(json.dumps(checks,indent=2));(p/'hardware-independent-check.json').write_text(json.dumps(checks,indent=2)+'\n')

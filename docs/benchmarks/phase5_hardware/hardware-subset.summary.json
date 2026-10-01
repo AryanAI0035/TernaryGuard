@@ -1,0 +1,15 @@
+{
+  "scope": "PHYSICAL Nano via serial",
+  "port": "/dev/cu.usbserial-A5069RR4",
+  "mode": "raw",
+  "samples": 330,
+  "prediction_disagreements": 0,
+  "tcp_rows": 30,
+  "tcp_true_positives": 1,
+  "median_inference_us": 36308.0,
+  "min_inference_us": 34804,
+  "max_inference_us": 36760,
+  "min_untouched_gap_bytes": 727,
+  "watermark_used_sram_bytes": 1321,
+  "max_abs_logit_error": 1.33514404296875e-05
+}

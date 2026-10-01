@@ -1,0 +1,14 @@
+{
+  "hardware-subset.jsonl.gz": {
+    "uncompressed_sha256": "11e3ffb7989faed42e5a5e9e81fa12265970bd3e7d983f4c2fa9de23bc7be51d",
+    "compressed_sha256": "fcad03cc7ba90f888c47ba27c498ed188ea4921a20540996a997fe82f3263c1c",
+    "uncompressed_bytes": 195077,
+    "compressed_bytes": 54229
+  },
+  "hardware-tcp.jsonl.gz": {
+    "uncompressed_sha256": "7bac28910e7660731ae70d485bb0b10cf6530786f20ac894c098f9e5d1547ea3",
+    "compressed_sha256": "051dae8c6b043653ff059b3a8adb99601dbb55bbc588eb1745ffa4272da67429",
+    "uncompressed_bytes": 3308714,
+    "compressed_bytes": 101825
+  }
+}

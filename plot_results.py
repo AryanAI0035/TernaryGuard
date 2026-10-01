@@ -51,7 +51,22 @@ plt.rcParams.update({
 plt.rcParams.update({"axes.grid": True, "grid.alpha": 0.3, "axes.axisbelow": True})
 
 
-def load_results(path: Path = RESULTS_FILE) -> pd.DataFrame:
+def invalidated_rows(df: pd.DataFrame) -> pd.Series:
+    """The notes marker INVALIDATED is case-insensitive and applies to the whole input."""
+    return df.get("notes", pd.Series("", index=df.index)).fillna("").astype(str).str.contains(
+        "INVALIDATED", case=False, regex=False)
+
+
+def save_figure(fig, path, df):
+    """Every plot sourced from invalidated data carries a visible warning."""
+    if df.attrs.get("invalidated_source", False) or invalidated_rows(df).any():
+        fig.text(0.5, 0.5, "INVALIDATED — DO NOT USE", ha="center", va="center",
+                 rotation=25, fontsize=28, weight="bold", color="red", alpha=0.7,
+                 zorder=1000)
+    fig.savefig(path, bbox_inches="tight")
+
+
+def load_results(path: Path = RESULTS_FILE, allow_invalidated: bool = False) -> pd.DataFrame:
     """Load and validate results CSV."""
     if not path.exists():
         print(f"Error: {path} not found. Run experiments first.")
@@ -60,6 +75,14 @@ def load_results(path: Path = RESULTS_FILE) -> pd.DataFrame:
     if df.empty:
         print("Warning: results.csv is empty. No plots to generate.")
         sys.exit(0)
+    invalid = invalidated_rows(df)
+    if invalid.any() and not allow_invalidated:
+        runs = (df.loc[invalid, "run_id"].dropna().astype(str).unique().tolist()
+                if "run_id" in df else [])
+        identity = ", ".join(runs) or str(path)
+        raise ValueError(f"Refusing INVALIDATED results: {identity}. "
+                         "Use --allow-invalidated only for watermarked historical plots.")
+    df.attrs["invalidated_source"] = bool(invalid.any())
     return df
 
 
@@ -90,7 +113,7 @@ def plot_accuracy_vs_quantization(df: pd.DataFrame, output_dir: Path) -> None:
 
     fig.suptitle("TernaryGuard — Accuracy vs Quantization", fontweight="bold")
     fig.tight_layout()
-    fig.savefig(output_dir / "accuracy_vs_quantization.png", bbox_inches="tight")
+    save_figure(fig, output_dir / "accuracy_vs_quantization.png", df)
     plt.close(fig)
     print("  ✓ accuracy_vs_quantization.png")
 
@@ -121,7 +144,7 @@ def plot_latency_comparison(df: pd.DataFrame, output_dir: Path) -> None:
     ax.set_title("TernaryGuard — Inference Latency by Engine", fontweight="bold")
     ax.set_yscale("log")
     fig.tight_layout()
-    fig.savefig(output_dir / "latency_comparison.png", bbox_inches="tight")
+    save_figure(fig, output_dir / "latency_comparison.png", df)
     plt.close(fig)
     print("  ✓ latency_comparison.png")
 
@@ -178,7 +201,7 @@ def plot_resource_usage(df: pd.DataFrame, output_dir: Path) -> None:
 
     fig.suptitle("TernaryGuard — Hardware Resource Usage", fontweight="bold")
     fig.tight_layout()
-    fig.savefig(output_dir / "resource_usage.png", bbox_inches="tight")
+    save_figure(fig, output_dir / "resource_usage.png", df)
     plt.close(fig)
     print("  ✓ resource_usage.png")
 
@@ -207,7 +230,7 @@ def plot_power_comparison(df: pd.DataFrame, output_dir: Path) -> None:
     ax.set_ylabel("Estimated Power (mW)")
     ax.set_title("TernaryGuard — Power Consumption by Engine", fontweight="bold")
     fig.tight_layout()
-    fig.savefig(output_dir / "power_comparison.png", bbox_inches="tight")
+    save_figure(fig, output_dir / "power_comparison.png", df)
     plt.close(fig)
     print("  ✓ power_comparison.png")
 
@@ -246,7 +269,7 @@ def plot_ablation_sweep(df: pd.DataFrame, output_dir: Path) -> None:
     ax.legend()
     ax.set_title("TernaryGuard — Architecture Ablation (Hidden Width Sweep)", fontweight="bold")
     fig.tight_layout()
-    fig.savefig(output_dir / "ablation_sweep.png", bbox_inches="tight")
+    save_figure(fig, output_dir / "ablation_sweep.png", df)
     plt.close(fig)
     print("  ✓ ablation_sweep.png")
 
@@ -262,6 +285,8 @@ def main():
         default=str(DEFAULT_OUTPUT_DIR),
         help="Output directory for plots",
     )
+    parser.add_argument("--allow-invalidated", action="store_true",
+                        help="Allow historical INVALIDATED notes only with a warning on every plot")
     args = parser.parse_args()
 
     output_dir = Path(args.output)
@@ -272,7 +297,10 @@ def main():
     print(f"  Output: {output_dir}")
     print()
 
-    df = load_results(args.results)
+    try:
+        df = load_results(args.results, allow_invalidated=args.allow_invalidated)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     if "run_id" in df.columns:
         run_id = args.run_id or df["run_id"].dropna().iloc[-1]

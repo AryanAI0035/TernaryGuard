@@ -146,3 +146,23 @@ MIT
 ---
 
 *Built to prove that the same model can run everywhere — from desktop to 2KB of RAM to custom silicon.*
+
+
+### Verify the active artifacts without rewriting them
+
+Run python3 model/validate_export.py --verify-active to verify the checkpoint,
+existing header, and preprocessing referenced by model/active_model.json.
+Checkpoint and header SHA-256 hashes cover file bytes; preprocessing follows the
+existing manifest convention: SHA-256 of canonical JSON (normalized string keys,
+sorted keys). The verifier also checks checkpoint/config/architecture agreement
+and compares the exact existing header against the checkpoint on all frozen test
+rows. It writes no artifacts. --active-model PATH supports another active
+manifest; its paths are relative to the parent of its containing model directory.
+The existing --checkpoint/--output-dir mode still regenerates an export.
+
+### Plot invalidated historical results
+
+A case-insensitive INVALIDATED substring in any CSV notes field blocks plotting
+by default, before run/phase filtering. --allow-invalidated explicitly permits
+historical plots and overlays **INVALIDATED — DO NOT USE** in red on every
+generated figure. Current valid result files need no extra flag.

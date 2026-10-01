@@ -2,6 +2,7 @@
 """Rebuild and validate an export against frozen, source-verified test row identities.
 
 Usage: python3 model/validate_export.py --checkpoint checkpoints/RUN/ternary_2bit.pt
+       python3 model/validate_export.py --verify-active
 """
 import argparse
 import hashlib
@@ -15,7 +16,7 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from model.artifacts import export_bundle, load_ternary_bundle, json_hash
+from model.artifacts import export_bundle, load_ternary_bundle, json_hash, HeaderReference
 from model.data_pipeline import get_feature_names, transform_features
 from model.train import verify_export
 
@@ -61,13 +62,76 @@ def frozen_test_loader(checkpoint, data_dir, batch_size=1024, partition="test"):
                                     torch.tensor(labels,dtype=torch.long)),batch_size=batch_size)
 
 
+
+def verify_active(active_path, data_dir, project_root=None):
+    """Verify existing artifacts without rewriting them.
+
+    Checkpoint/header hashes cover bytes; preprocessing follows the existing
+    canonical-JSON SHA-256 convention. Active paths are repository-relative.
+    """
+    active_path = Path(active_path).resolve()
+    root = Path(project_root) if project_root is not None else active_path.parent.parent
+    active = json.loads(active_path.read_text())
+    paths = {key: root / active[key]
+             for key in ('checkpoint', 'header', 'preprocessing', 'manifest')}
+    manifest = json.loads(paths['manifest'].read_text())
+    config = json.loads(paths['preprocessing'].read_text())
+    hashes = {
+        'checkpoint_sha256': hashlib.sha256(paths['checkpoint'].read_bytes()).hexdigest(),
+        'header_sha256': hashlib.sha256(paths['header'].read_bytes()).hexdigest(),
+        'preprocessing_sha256': json_hash(config),
+    }
+    for key, actual in hashes.items():
+        if actual != manifest[key]:
+            raise ValueError(f'Active artifact {key} mismatch: expected {manifest[key]}, got {actual}')
+    model, bundle = load_ternary_bundle(paths['checkpoint'])
+    if json_hash(config) != bundle['preprocessing_sha256']:
+        raise ValueError('Active preprocessing does not match checkpoint')
+    if active['architecture'] != bundle['architecture'] or manifest['architecture'] != bundle['architecture']:
+        raise ValueError('Active architecture does not match checkpoint')
+    reference = HeaderReference(paths['header'])
+    architecture = bundle['architecture']
+    dims = [architecture['input_dim'], *architecture['hidden_dims'], architecture['output_dim']]
+    if reference.dims.tolist() != dims or reference.norm != architecture['use_rmsnorm']:
+        raise ValueError('Active header architecture does not match checkpoint')
+    loader = frozen_test_loader(paths['checkpoint'], data_dir)
+    total, disagreements, max_error = 0, 0, 0.
+    with torch.no_grad():
+        for x, _ in loader:
+            expected = model(x).numpy()
+            actual = reference(x.numpy())
+            np.testing.assert_allclose(actual, expected, atol=2e-5, rtol=2e-5)
+            disagreements += int(np.count_nonzero(actual.argmax(1) != expected.argmax(1)))
+            max_error = max(max_error, float(np.max(np.abs(actual - expected))))
+            total += len(x)
+    if not total:
+        raise ValueError('Active verification requires a nonempty frozen test set')
+    if disagreements:
+        raise ValueError(f'Active header changes {disagreements}/{total} classifications')
+    return dict(mode='verify-active', hashes=hashes,
+                preprocessing_hash_format='canonical JSON SHA-256',
+                header=str(paths['header']), samples=total,
+                prediction_matches=total-disagreements,
+                prediction_disagreements=disagreements,
+                max_abs_logit_error=max_error, atol=2e-5, rtol=2e-5,
+                artifacts_rewritten=False)
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--checkpoint',type=Path,required=True)
+    modes=parser.add_mutually_exclusive_group(required=True)
+    modes.add_argument('--checkpoint',type=Path)
+    modes.add_argument('--verify-active',action='store_true')
+    parser.add_argument('--active-model',type=Path,default=Path(__file__).resolve().parents[1]/'model/active_model.json')
     parser.add_argument('--data-dir',type=Path,default=Path(__file__).resolve().parents[1]/'data/raw/nbaiot')
     parser.add_argument('--output-dir',type=Path)
     args=parser.parse_args()
     torch.set_num_threads(1)
+    if args.verify_active:
+        if args.output_dir is not None:
+            parser.error('--output-dir applies only to checkpoint regeneration')
+        print(json.dumps(verify_active(args.active_model,args.data_dir),indent=2))
+        return
     output=args.output_dir or args.checkpoint.parent/'export'
     loader=frozen_test_loader(args.checkpoint,args.data_dir)
     model,_=export_bundle(args.checkpoint,output)

@@ -1,37 +1,35 @@
-## TernaryGuard — FPGA Engine (Vivado)
+# TernaryGuard — FPGA accelerator
 
-### Target
-- **Part:** `xc7a35tcpg236-1` (Artix-7, Basys 3)
-- **Mode:** Simulation-only (no physical board)
-- **Simulator:** Vivado XSim
+**Phase 6: locally verified RTL. Phase 7: manual Vivado acceptance pending.**
+Target `xc7a35tcpg236-1` (Basys 3), simulation/synthesis only; no physical board deployment. Dashboard work remains deferred under the 2026-10-03 scope change. See [Phase 7 manual instructions](../docs/phase7_manual_vivado.md) and [Phase 6 evidence](../docs/phase6_local_validation.md).
 
-### Directory Structure
-```
-engine-fpga/
-├── rtl/                    # Synthesizable Verilog/SystemVerilog
-│   ├── ternary_mac.v       # Single ternary MAC unit
-│   ├── mac_array.v         # Parallel MAC array
-│   ├── control.v           # Sequencer / control FSM
-│   └── top.v               # Top-level integration
-├── tb/                     # Testbenches (non-synthesizable)
-│   ├── tb_ternary_mac.v    # MAC unit testbench
-│   ├── tb_mac_array.v      # MAC array testbench
-│   └── tb_top.v            # Full-system testbench
-├── constraints/            # Vivado constraints
-│   └── basys3.xdc          # Pin/timing constraints for xc7a35t
-├── sim_results/            # XSim output logs for dashboard replay
-│   └── .gitkeep
-├── scripts/                # TCL automation scripts
-│   └── run_sim.tcl         # Batch simulation script
-└── README.md               # This file
+## Datapath
+
+`ternary_mac.sv` implements signed int64 add/subtract/skip with `00=0`, `01=+1`, `10=-1`; reserved `11` faults. `mac_array.sv` instantiates eight lanes. `control.sv` sequences the exact 20→64→32→11 architecture, including two RMSNorms, shared-exponent conversion, trained scale/bias, ReLU and first-index argmax. `numeric.sv` implements bit-level conversion/truncation and round-to-nearest-even restoration. The integer kernel contains no weight multiply, floating-point operations or dynamic allocation.
+
+The input stream contains **20 preprocessed binary32 values** from the frozen signed-log1p/StandardScaler pipeline. Preprocessing stays on the host; this accelerator does not implement feature extraction or log1p. Outputs are 11 binary32 logits plus the RTL's class ID. Finite normals and signed zeros are supported; subnormal/nonfinite inputs or intermediates are rejected. The full frozen dataset passes this contract locally; arbitrary inputs outside it have no parity claim.
+
+`fp32_unit.sv` wraps four AMD FP32 IP cores for separate add/multiply/divide/sqrt operations outside the dot product. `TG_PORTABLE_SIM` selects **simulation-only host arithmetic**, via VPI for Icarus or DPI for Verilator. That mode is never used in synthesis or the XSim acceptance scripts. Local parity is not proof of vendor-IP arithmetic parity or timing closure.
+
+`top.sv` provides a ready/valid word-stream interface. `basys3_top.sv` is the small pin-count synthesis wrapper, using a synchronous LSB-first bit stream; it is not UART and has not run on a physical FPGA. Reset is synchronous and must be asserted for at least five clock edges in the validation setup. A fault latches until reset.
+
+## Local reproduction
+
+From the repository root, with Python's existing model dependencies and Verilator installed:
+
+```sh
+python3 engine-fpga/prepare.py --vectors test --output engine-fpga/build/frozen
+python3 engine-fpga/run_compiled.py --vectors engine-fpga/build/frozen
+python3 -m pytest model/tests/ -v --tb=short
+python3 engine-fpga/make_handoff.py --vectors engine-fpga/build/frozen --output engine-fpga/build/phase7-vivado-handoff.zip
 ```
 
-### Validation Strategy
-- Testbenches use the **exact same test vectors** as `engine-software/` (Phase 4)
-- Outputs compared bit-exact against software reference
-- Simulation results exported as JSON to `sim_results/` for dashboard replay
+The generator checks the existing active artifact hashes, runs `verify_active`, loads frozen row identities and computes a fresh PyTorch oracle. It derives ROM bytes and binary32 constants from the exact root `model_weights.h`; it does not regenerate or modify that header. The comparator checks all generated hashes, exact prediction/class-output agreement, per-logit tolerance (`atol=rtol=2e-5`) and TCP **1/5,555 at index 59782**.
 
-### Synthesis Reports (generated)
-- Utilization report (LUTs, FFs, DSPs, BRAMs)
-- Timing summary (WNS, TNS, WHS)
-- Power estimate (Vivado power analyzer)
+`run_local.py` offers slower Icarus/VPI network simulation. MAC, array, numeric, full golden-vector and synthesis-wrapper regressions are in `model/tests/test_fpga_port.py`. Tool-dependent tests report explicit skips if their required simulator is absent; no skip is accepted as proof of FPGA correctness.
+
+## Manual Vivado gate
+
+Use the portable ZIP and [instructions](../docs/phase7_manual_vivado.md) on the borrowed laptop. Scripts generate XSim, post-synthesis/post-route utilization, timing, DRC, routing and **vectorless power** reports. The target clock is 100 MHz; this is a constraint, not an achieved frequency until routing closes.
+
+No LUT/FF/DSP/BRAM count, WNS/TNS or wattage is claimed without an actual Vivado report. RTL is written for synthesis; vendor synthesis and timing closure remain unverified. The whole network includes FP multipliers, even though its ternary MAC array uses add/subtract/skip only.

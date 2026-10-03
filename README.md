@@ -6,7 +6,7 @@ A 1.58-bit ternary neural network (`weights ∈ {-1, 0, 1}`) for IoT botnet/DDoS
 
 **Ternary weight dot products use add/subtract/skip. The project aims to validate the same compact model in desktop C, an Arduino Nano with 2KB RAM, and FPGA simulation/synthesis.**
 
-Current status: phase-3 pipeline corrections and export validation complete; class-level model quality remains unresolved. Engine inference and the dashboard are not implemented yet; hardware performance has not been measured. The active FPGA scope is simulation/synthesis without a physical board. See [corrected results and limitations](docs/phase3_corrections.md), [phase-3 audit](docs/phase3_review.md) and [architecture budget](docs/architecture_budget.md).
+Current status: Phases 0–5 are complete for the frozen research reference, including desktop C parity and measured Arduino Nano validation. [Phase 6 local FPGA RTL validation](docs/phase6_local_validation.md) passes all 69,040 frozen predictions. Per the current scope decision, [Phase 7 is manual Vivado verification](docs/phase7_manual_vivado.md) on a borrowed laptop; XSim parity, synthesis, routing, timing closure and tool power estimates remain pending. FPGA work is simulation/synthesis only, without a physical board. Dashboard work is deferred. The model remains a research reference: BASHLITE TCP recall is 1/5,555 (0.018%), and class-level quality blocks complete 11-class deployment. See [corrected results and limitations](docs/phase3_corrections.md).
 
 ---
 

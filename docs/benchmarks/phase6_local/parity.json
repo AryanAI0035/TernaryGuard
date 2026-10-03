@@ -1,0 +1,31 @@
+{
+  "scope": "RTL simulation only; no physical FPGA",
+  "backend": "verilator",
+  "fp_model": "Host binary32 arithmetic model, NOT AMD IP",
+  "vectors": "test",
+  "samples": 69040,
+  "prediction_matches": 69040,
+  "prediction_disagreements": 0,
+  "rtl_argmax_disagreements": 0,
+  "mismatch_indices": [],
+  "max_abs_logit_error_vs_checkpoint": 1.1444091796875e-05,
+  "tolerance": {
+    "atol": 2e-05,
+    "rtol": 2e-05
+  },
+  "logits_within_tolerance": true,
+  "binary32_logit_word_matches": 225829,
+  "accuracy": 0.8108198146002318,
+  "bashlite_tcp": {
+    "total": 5555,
+    "true_positives": 1,
+    "true_positive_test_indices": [
+      59782
+    ]
+  },
+  "active_hashes": {
+    "checkpoint_sha256": "c335f7d468c932c3855b190061f452ff2b5b0f3fca8276bf1bff6d674ad13774",
+    "header_sha256": "e1d919a0049e2c492d4ce54168cf9cb223bd90b4b1b74554539089ccf4c60ee8",
+    "preprocessing_sha256": "1339886eaa7cde612b32831057afb225b7d5f314f8ebecdc6f8d57ae99c55c7d"
+  }
+}

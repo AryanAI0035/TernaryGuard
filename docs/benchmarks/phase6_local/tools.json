@@ -1,0 +1,12 @@
+{
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "tools": {
+    "vivado": null,
+    "xvlog": null,
+    "xelab": null,
+    "xsim": null,
+    "iverilog": "/opt/homebrew/bin/iverilog",
+    "verilator": "/opt/homebrew/bin/verilator"
+  },
+  "verilator_version": "Verilator 5.052 2026-09-05 rev vUNKNOWN-built20260905"
+}

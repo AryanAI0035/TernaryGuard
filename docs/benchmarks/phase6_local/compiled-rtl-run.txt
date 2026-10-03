@@ -1,0 +1,119 @@
+$ verilator --binary --timing --build-jobs 4 -DTG_PORTABLE_SIM --top-module tb_top --Mdir /private/tmp/tg-phase6-final/compiled/obj -CFLAGS -ffp-contract=off -fno-fast-math /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/rtl/numeric.sv /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/rtl/ternary_mac.sv /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/rtl/mac_array.sv /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/rtl/fp32_unit.sv /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/rtl/control.sv /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/rtl/top.sv /private/tmp/tg-phase6-final/model_rom.sv /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/tb/tb_top.sv /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/tb/fp32_dpi.cpp
+c++ -Os  -I.  -MMD -I/opt/homebrew/Cellar/verilator/5.052/share/verilator/include -I/opt/homebrew/Cellar/verilator/5.052/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=1 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=0 -faligned-new -fbracket-depth=4096 -fcf-protection=none -Xclang -fno-pch-timestamp -Qunused-arguments -Wno-bool-operation -Wno-c++11-narrowing -Wno-constant-logical-operand -Wno-int-in-bool-context -Wno-non-pod-varargs -Wno-parentheses-equality -Wno-shadow -Wno-sign-compare -Wno-tautological-bitwise-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unnecessary-virtual-specifier -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-vla-cxx-extension    -ffp-contract=off -fno-fast-math -DVL_TIME_CONTEXT   -std=gnu++20 -c -o verilated.o /opt/homebrew/Cellar/verilator/5.052/share/verilator/include/verilated.cpp
+c++ -Os  -I.  -MMD -I/opt/homebrew/Cellar/verilator/5.052/share/verilator/include -I/opt/homebrew/Cellar/verilator/5.052/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=1 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=0 -faligned-new -fbracket-depth=4096 -fcf-protection=none -Xclang -fno-pch-timestamp -Qunused-arguments -Wno-bool-operation -Wno-c++11-narrowing -Wno-constant-logical-operand -Wno-int-in-bool-context -Wno-non-pod-varargs -Wno-parentheses-equality -Wno-shadow -Wno-sign-compare -Wno-tautological-bitwise-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unnecessary-virtual-specifier -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-vla-cxx-extension    -ffp-contract=off -fno-fast-math -DVL_TIME_CONTEXT   -std=gnu++20 -c -o verilated_dpi.o /opt/homebrew/Cellar/verilator/5.052/share/verilator/include/verilated_dpi.cpp
+c++ -Os  -I.  -MMD -I/opt/homebrew/Cellar/verilator/5.052/share/verilator/include -I/opt/homebrew/Cellar/verilator/5.052/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=1 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=0 -faligned-new -fbracket-depth=4096 -fcf-protection=none -Xclang -fno-pch-timestamp -Qunused-arguments -Wno-bool-operation -Wno-c++11-narrowing -Wno-constant-logical-operand -Wno-int-in-bool-context -Wno-non-pod-varargs -Wno-parentheses-equality -Wno-shadow -Wno-sign-compare -Wno-tautological-bitwise-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unnecessary-virtual-specifier -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-vla-cxx-extension    -ffp-contract=off -fno-fast-math -DVL_TIME_CONTEXT   -std=gnu++20 -c -o verilated_timing.o /opt/homebrew/Cellar/verilator/5.052/share/verilator/include/verilated_timing.cpp
+c++ -Os  -I.  -MMD -I/opt/homebrew/Cellar/verilator/5.052/share/verilator/include -I/opt/homebrew/Cellar/verilator/5.052/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=1 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=0 -faligned-new -fbracket-depth=4096 -fcf-protection=none -Xclang -fno-pch-timestamp -Qunused-arguments -Wno-bool-operation -Wno-c++11-narrowing -Wno-constant-logical-operand -Wno-int-in-bool-context -Wno-non-pod-varargs -Wno-parentheses-equality -Wno-shadow -Wno-sign-compare -Wno-tautological-bitwise-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unnecessary-virtual-specifier -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-vla-cxx-extension    -ffp-contract=off -fno-fast-math -DVL_TIME_CONTEXT   -std=gnu++20 -c -o verilated_threads.o /opt/homebrew/Cellar/verilator/5.052/share/verilator/include/verilated_threads.cpp
+python3 /opt/homebrew/Cellar/verilator/5.052/share/verilator/bin/verilator_includer -DVL_INCLUDE_OPT=include Vtb_top.cpp Vtb_top___024root__0.cpp Vtb_top__main.cpp Vtb_top__Dpi.cpp Vtb_top___024root__Slow.cpp Vtb_top___024root__0__Slow.cpp Vtb_top__Syms__Slow.cpp > Vtb_top__ALL.cpp
+c++ -Os  -I.  -MMD -I/opt/homebrew/Cellar/verilator/5.052/share/verilator/include -I/opt/homebrew/Cellar/verilator/5.052/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=1 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=0 -faligned-new -fbracket-depth=4096 -fcf-protection=none -Xclang -fno-pch-timestamp -Qunused-arguments -Wno-bool-operation -Wno-c++11-narrowing -Wno-constant-logical-operand -Wno-int-in-bool-context -Wno-non-pod-varargs -Wno-parentheses-equality -Wno-shadow -Wno-sign-compare -Wno-tautological-bitwise-compare -Wno-tautological-compare -Wno-uninitialized -Wno-unnecessary-virtual-specifier -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable -Wno-vla-cxx-extension    -ffp-contract=off -fno-fast-math -DVL_TIME_CONTEXT   -std=gnu++20 -c -o Vtb_top__ALL.o Vtb_top__ALL.cpp
+c++  -Wl,-U,__Z15vl_time_stamp64v,-U,__Z13sc_time_stampv,-U,_vlog_startup_routines   fp32_dpi.o verilated.o verilated_dpi.o verilated_timing.o verilated_threads.o Vtb_top__ALL.a    -pthread -lpthread   -o Vtb_top
+rm Vtb_top__ALL.verilator_deplist.tmp
+- V e r i l a t i o n   R e p o r t: Verilator 5.052 2026-09-05 rev vUNKNOWN-built20260905
+- Verilator: Built from 0.285 MB sources in 9 modules, into 0.347 MB in 7 C++ files needing 0.001 MB
+- Verilator: Walltime 2.407 s (elab=0.009, cvt=0.031, bld=2.344); cpu 0.046 s on 4 threads; allocated 20.422 MB
+$ /private/tmp/tg-phase6-final/compiled/obj/Vtb_top +SAMPLES=69040 +INPUT=/private/tmp/tg-phase6-final/inputs.mem +OUTPUT=/private/tmp/tg-phase6-final/verilator_logits.mem
+RTL_PROGRESS samples=1000/69040
+RTL_PROGRESS samples=2000/69040
+RTL_PROGRESS samples=3000/69040
+RTL_PROGRESS samples=4000/69040
+RTL_PROGRESS samples=5000/69040
+RTL_PROGRESS samples=6000/69040
+RTL_PROGRESS samples=7000/69040
+RTL_PROGRESS samples=8000/69040
+RTL_PROGRESS samples=9000/69040
+RTL_PROGRESS samples=10000/69040
+RTL_PROGRESS samples=11000/69040
+RTL_PROGRESS samples=12000/69040
+RTL_PROGRESS samples=13000/69040
+RTL_PROGRESS samples=14000/69040
+RTL_PROGRESS samples=15000/69040
+RTL_PROGRESS samples=16000/69040
+RTL_PROGRESS samples=17000/69040
+RTL_PROGRESS samples=18000/69040
+RTL_PROGRESS samples=19000/69040
+RTL_PROGRESS samples=20000/69040
+RTL_PROGRESS samples=21000/69040
+RTL_PROGRESS samples=22000/69040
+RTL_PROGRESS samples=23000/69040
+RTL_PROGRESS samples=24000/69040
+RTL_PROGRESS samples=25000/69040
+RTL_PROGRESS samples=26000/69040
+RTL_PROGRESS samples=27000/69040
+RTL_PROGRESS samples=28000/69040
+RTL_PROGRESS samples=29000/69040
+RTL_PROGRESS samples=30000/69040
+RTL_PROGRESS samples=31000/69040
+RTL_PROGRESS samples=32000/69040
+RTL_PROGRESS samples=33000/69040
+RTL_PROGRESS samples=34000/69040
+RTL_PROGRESS samples=35000/69040
+RTL_PROGRESS samples=36000/69040
+RTL_PROGRESS samples=37000/69040
+RTL_PROGRESS samples=38000/69040
+RTL_PROGRESS samples=39000/69040
+RTL_PROGRESS samples=40000/69040
+RTL_PROGRESS samples=41000/69040
+RTL_PROGRESS samples=42000/69040
+RTL_PROGRESS samples=43000/69040
+RTL_PROGRESS samples=44000/69040
+RTL_PROGRESS samples=45000/69040
+RTL_PROGRESS samples=46000/69040
+RTL_PROGRESS samples=47000/69040
+RTL_PROGRESS samples=48000/69040
+RTL_PROGRESS samples=49000/69040
+RTL_PROGRESS samples=50000/69040
+RTL_PROGRESS samples=51000/69040
+RTL_PROGRESS samples=52000/69040
+RTL_PROGRESS samples=53000/69040
+RTL_PROGRESS samples=54000/69040
+RTL_PROGRESS samples=55000/69040
+RTL_PROGRESS samples=56000/69040
+RTL_PROGRESS samples=57000/69040
+RTL_PROGRESS samples=58000/69040
+RTL_PROGRESS samples=59000/69040
+RTL_PROGRESS samples=60000/69040
+RTL_PROGRESS samples=61000/69040
+RTL_PROGRESS samples=62000/69040
+RTL_PROGRESS samples=63000/69040
+RTL_PROGRESS samples=64000/69040
+RTL_PROGRESS samples=65000/69040
+RTL_PROGRESS samples=66000/69040
+RTL_PROGRESS samples=67000/69040
+RTL_PROGRESS samples=68000/69040
+RTL_PROGRESS samples=69000/69040
+RTL_PASS samples=69040 post_input_wait_cycles=387866720 backpressure=PASS NaN_rejection=PASS reset=PASS
+- /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/tb/tb_top.sv:67: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.052 2026-09-05
+- Verilator: $finish at 4s; walltime 91.023 s; speed 42.999 ms/s
+- Verilator: cpu 90.468 s on 1 threads; allocated 7 MB
+$ /opt/anaconda3/bin/python3 /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/compare.py --vectors /private/tmp/tg-phase6-final --logits /private/tmp/tg-phase6-final/verilator_logits.mem --backend verilator
+{
+  "scope": "RTL simulation only; no physical FPGA",
+  "backend": "verilator",
+  "fp_model": "Host binary32 arithmetic model, NOT AMD IP",
+  "vectors": "test",
+  "samples": 69040,
+  "prediction_matches": 69040,
+  "prediction_disagreements": 0,
+  "rtl_argmax_disagreements": 0,
+  "mismatch_indices": [],
+  "max_abs_logit_error_vs_checkpoint": 1.1444091796875e-05,
+  "tolerance": {
+    "atol": 2e-05,
+    "rtol": 2e-05
+  },
+  "logits_within_tolerance": true,
+  "binary32_logit_word_matches": 225829,
+  "accuracy": 0.8108198146002318,
+  "bashlite_tcp": {
+    "total": 5555,
+    "true_positives": 1,
+    "true_positive_test_indices": [
+      59782
+    ]
+  },
+  "active_hashes": {
+    "checkpoint_sha256": "c335f7d468c932c3855b190061f452ff2b5b0f3fca8276bf1bff6d674ad13774",
+    "header_sha256": "e1d919a0049e2c492d4ce54168cf9cb223bd90b4b1b74554539089ccf4c60ee8",
+    "preprocessing_sha256": "1339886eaa7cde612b32831057afb225b7d5f314f8ebecdc6f8d57ae99c55c7d"
+  }
+}

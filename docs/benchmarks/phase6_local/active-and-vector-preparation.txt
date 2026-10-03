@@ -1,0 +1,16 @@
+ACTIVE ARTIFACT VERIFICATION {"mode": "verify-active", "hashes": {"checkpoint_sha256": "c335f7d468c932c3855b190061f452ff2b5b0f3fca8276bf1bff6d674ad13774", "header_sha256": "e1d919a0049e2c492d4ce54168cf9cb223bd90b4b1b74554539089ccf4c60ee8", "preprocessing_sha256": "1339886eaa7cde612b32831057afb225b7d5f314f8ebecdc6f8d57ae99c55c7d"}, "preprocessing_hash_format": "canonical JSON SHA-256", "header": "/Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/model_weights.h", "samples": 69040, "prediction_matches": 69040, "prediction_disagreements": 0, "max_abs_logit_error": 1.1444091796875e-05, "atol": 2e-05, "rtol": 2e-05, "artifacts_rewritten": false}
+{
+  "scope": "HOST-preprocessed inputs; frozen checkpoint oracle; no physical FPGA",
+  "vectors": "test",
+  "samples": 69040,
+  "active_hashes": {
+    "checkpoint_sha256": "c335f7d468c932c3855b190061f452ff2b5b0f3fca8276bf1bff6d674ad13774",
+    "header_sha256": "e1d919a0049e2c492d4ce54168cf9cb223bd90b4b1b74554539089ccf4c60ee8",
+    "preprocessing_sha256": "1339886eaa7cde612b32831057afb225b7d5f314f8ebecdc6f8d57ae99c55c7d"
+  },
+  "rom_sha256": "35407b96c2c425b2a8c9c56b51b1c5990948e89d3327199bf6363d768a772ae7",
+  "input_sha256": "0687a80a319892ba3a02cdf95a9f97ce0a59f64857d1bc63cc2934f3a33c0ee5",
+  "reference_sha256": "c97b1fe501d65c8138b20712ee3aab3472b72c96c472838ebea6178aa2412709",
+  "test_row_identity_sha256": "b3d5c16fceb383423cdab2982d5e119280bdbed8d72246235f798e56d51be1f1",
+  "fp_contract": "binary32 RNE, separate operations; reject subnormal/nonfinite inputs and intermediates"
+}

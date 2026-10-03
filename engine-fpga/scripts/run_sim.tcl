@@ -1,27 +1,21 @@
-# TernaryGuard — Vivado XSim Batch Script
-# Runs the full-system testbench and exports results for dashboard replay.
-#
-# Usage: vivado -mode batch -source run_sim.tcl
-
-# ──────────────── Project Setup ────────────────
-# Note: Adjust paths if running from a different directory
-set proj_dir [file normalize [file dirname [info script]]/..]
-set rtl_dir "$proj_dir/rtl"
-set tb_dir "$proj_dir/tb"
-set sim_dir "$proj_dir/sim_results"
-
-puts "TernaryGuard FPGA Simulation"
-puts "  RTL dir: $rtl_dir"
-puts "  TB dir:  $tb_dir"
-puts "  Output:  $sim_dir"
-
-# ──────────────── Phase 6: Add simulation commands here ────────────────
-# xvlog -sv $rtl_dir/ternary_mac.v
-# xvlog -sv $rtl_dir/mac_array.v
-# xvlog -sv $rtl_dir/control.v
-# xvlog -sv $rtl_dir/top.v
-# xvlog -sv $tb_dir/tb_top.v
-# xelab tb_top -debug typical
-# xsim tb_top -runall -log $sim_dir/simulation.log
-
-puts "Simulation script ready — RTL not yet implemented (Phase 6)"
+# XSim validation with REAL AMD FP IP; no TG_PORTABLE_SIM, no VPI host oracle.
+source [file join [file dirname [info script]] create_project.tcl]
+add_files -fileset sim_1 [file join $engine tb tb_ternary_mac.sv]
+add_files -fileset sim_1 [file join $engine tb tb_top.sv]
+set_property top tb_ternary_mac [get_filesets sim_1]
+launch_simulation
+run all
+close_sim
+set handle [open [file join $vectors vectors.json] r]
+set meta [read $handle];close $handle
+if {![regexp {"samples":\s*([0-9]+)} $meta match samples]} {error "No sample count"}
+if {$samples!=69040} {error "Final XSim acceptance requires ALL 69,040 frozen rows"}
+set_property top tb_top [get_filesets sim_1]
+# Quote paths inside plusargs; use a short directory without spaces on Windows.
+set opts "-testplusarg SAMPLES=$samples -testplusarg INPUT=[file join $vectors inputs.mem] -testplusarg OUTPUT=[file join $output xsim_logits.mem]"
+set_property xsim.simulate.xsim.more_options $opts [get_filesets sim_1]
+set_property xsim.simulate.runtime 1000ns [get_filesets sim_1]
+launch_simulation
+run all
+close_sim
+puts "XSIM FINISHED: run compare.py --backend xsim; completion alone is not acceptance"

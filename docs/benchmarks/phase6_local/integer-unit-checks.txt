@@ -1,0 +1,13 @@
+$ iverilog -g2012 -s tb_ternary_mac -o /private/tmp/tg-phase6-checks/mac.vvp /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/rtl/ternary_mac.sv /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/tb/tb_ternary_mac.sv
+$ vvp /private/tmp/tg-phase6-checks/mac.vvp
+MAC_PASS signed_int64_operations=8192 skip=PASS enable=PASS clear=PASS reserved_code=PASS
+/Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/tb/tb_ternary_mac.sv:28: $finish called at 81980000 (1ps)
+$ iverilog -g2012 -s tb_mac_array -o /private/tmp/tg-phase6-checks/array.vvp /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/rtl/ternary_mac.sv /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/rtl/mac_array.sv /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/tb/tb_mac_array.sv
+$ vvp /private/tmp/tg-phase6-checks/array.vvp
+ARRAY_PASS lanes=8 batches=16 terms_per_batch=64 reserved_lane7=PASS
+/Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/tb/tb_mac_array.sv:36: $finish called at 10440000 (1ps)
+$ python3 /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/test_numeric.py --output /private/tmp/tg-phase6-checks/numeric
+$ iverilog -g2012 -s tb_numeric -o /private/tmp/tg-phase6-checks/numeric/numeric.vvp /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/rtl/numeric.sv /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/tb/tb_numeric.sv
+$ vvp /private/tmp/tg-phase6-checks/numeric/numeric.vvp +VECTORS=/private/tmp/tg-phase6-checks/numeric/numeric.mem +COUNT=2048
+NUMERIC_PASS cases=2048
+/Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-fpga/tb/tb_numeric.sv:18: $finish called at 0 (1ps)

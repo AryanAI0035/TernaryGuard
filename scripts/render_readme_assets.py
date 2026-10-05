@@ -46,6 +46,8 @@ def arrow(ax, a, b):
 def save(fig, name):
     OUT.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT/(name+'.svg'), bbox_inches='tight', facecolor='white', metadata={'Date': None})
+    svg = OUT/(name+'.svg')
+    svg.write_text('\n'.join(line.rstrip() for line in svg.read_text().splitlines())+'\n')
     fig.savefig(OUT/(name+'.png'), dpi=150, bbox_inches='tight', facecolor='white')
     plt.close(fig)
 

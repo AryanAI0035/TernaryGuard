@@ -1,10 +1,10 @@
 # TernaryGuard
 
-**A completed embedded machine learning research prototype for IoT botnet classification, built in PyTorch, C and Arduino Nano.**
+**A compact IoT botnet classifier trained in PyTorch and tested in C and on Arduino Nano.**
 
 TernaryGuard trains an 11-class neural network on N-BaIoT traffic statistics, packs its weights into two bits each, and runs the frozen model through an integer ternary dot product on a workstation and an actual ATmega328P Nano. The dot product decodes **0, +1, −1** and uses add/subtract/skip; preprocessing, normalization and final scaling still use floating point.
 
-The delivered scope is the trained model, verified export, C engine and physically tested Nano firmware. **FPGA is optional future work**, preserved under [future-scope/](future-scope/README.md). No FPGA deployment, Vivado timing closure or dashboard implementation is claimed.
+The model, export, C engine and Nano firmware are complete for the research prototype. **FPGA is future work** in [future-scope/](future-scope/README.md); Vivado verification is pending. The dashboard has not been implemented.
 
 ## Verified results
 
@@ -20,7 +20,7 @@ The delivered scope is the trained model, verified export, C engine and physical
 | Nano median inference | **36.308 ms** | Physical micros() measurement on 330 stratified rows, preprocessing included, UART excluded |
 | Nano prediction parity | **5,855 unique rows**, zero disagreements | 330 stratified + all 5,555 TCP rows; 5,885 transactions with 30 overlapping rows |
 
-**Known limitation:** BASHLITE TCP recall is **1/5,555 (0.018%)** on the frozen test split. The Nano reproduces the same sole detection at test index 59782. The model effectively fails to detect this attack class; overall accuracy must not hide that. This is a completed research prototype, not a production-ready intrusion detector.
+**Known limitation:** BASHLITE TCP recall is **1/5,555 (0.018%)** on the frozen test split. The Nano reproduces the same sole detection at test index 59782. The model rarely recognizes this attack class, so the aggregate accuracy does not establish reliable detection of all 11 classes. It is a research prototype, not a production intrusion detector.
 
 ## How it works
 
@@ -39,7 +39,7 @@ The C and AVR engines use a shared exponent to convert activations to bounded in
 
 Inputs are already extracted N-BaIoT traffic statistics. Packet capture, online feature extraction and live network blocking are outside the delivered scope.
 
-## Run from a fresh clone
+## Get started
 
 Requires Python **3.11+**, a C compiler (`cc`), and the dependencies below. No Nano, raw dataset or FPGA tools are needed for the bundled engineering replay or core regression tests.
 
@@ -57,7 +57,7 @@ python3 -m pytest model/tests/ -v --tb=short
 
 The demo compares the frozen checkpoint, existing exported header and compiled C engine on **264 bundled preprocessed engineering vectors**. It is an inference replay, not a fresh accuracy evaluation or a live traffic monitor. C/AVR compilation tests require a compatible `cc`; run those on macOS, Linux or WSL. The default/core suite contains **99 tests**.
 
-The exact frozen checkpoint, data manifest and split identities are included under `checkpoints/phase3_final_seed42/`; the raw dataset and other training checkpoints are excluded. For full 69,040-row verification, dataset download, C benchmarking and Nano flashing, see [reproduction instructions](docs/reproduce.md).
+The checkpoint, data manifest and split identities are included under `checkpoints/phase3_final_seed42/`; the raw dataset and other training checkpoints are excluded. For full 69,040-row verification, dataset download, C benchmarking and Nano flashing, see [reproduction instructions](docs/reproduce.md).
 
 ## Repository
 
@@ -72,7 +72,7 @@ The exact frozen checkpoint, data manifest and split identities are included und
 | [research/](research/) | Dataset preparation, exploratory analysis and diagnostic scripts |
 | [future-scope/](future-scope/README.md) | Optional FPGA work and dashboard placeholders |
 
-Original implementation proposals are [archived](docs/archive/original_implementation_plan.md). Historical phase names and budgets are retained as records; current completion scope and measured results are defined above. Invalidated CSVs remain explicitly labeled and cannot produce unmarked plots through the plotting tool.
+Original implementation proposals are [archived](docs/archive/original_implementation_plan.md). Earlier audits and budgets are retained as historical records. Invalidated CSVs remain explicitly labeled and cannot produce unmarked plots through the plotting tool.
 
 ## License and dataset
 

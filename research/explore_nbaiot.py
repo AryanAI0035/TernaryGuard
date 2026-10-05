@@ -1,28 +1,16 @@
 #!/usr/bin/env python3
-"""
-TernaryGuard — N-BaIoT Exploratory Data Analysis (EDA)
+"""Explore N-BaIoT feature distributions and estimated model memory.
 
-Performs comprehensive exploratory data analysis on the N-BaIoT dataset
-(115 network traffic statistics across 11 classes: 1 benign + 10 botnet attacks)
-tailored for extreme embedded deployment constraints (ATmega328P: 32KB flash, 2KB RAM).
-
-Key Capabilities:
-1. Dataset ingestion via model.data_pipeline.NBaIoTDataset with automatic fallback
-   to realistic synthetic N-BaIoT traffic if raw CSV files are not present.
-2. Visualizations saved to research/eda/ at 150 DPI:
-   - class_distribution.png: Class breakdown (benign green, attacks red shades).
-   - feature_importance.png: Top 30 features ranked by mutual information.
-   - correlation_matrix.png: Pearson correlation heatmap of top 30 features.
-   - feature_distributions.png: 4x5 grid of histograms (benign vs attack) for top 20 features.
-   - tsne_visualization.png: 2D t-SNE projection of up to 5,000 samples.
-3. Embedded feasibility & memory estimation:
-   - Evaluates input feature vector footprint (FP32, Int16, Int8).
-   - Computes exact Flash & RAM budgets for TernaryMLP architectures on ATmega328P.
-4. Summary table printed to stdout.
+Writes class counts, mutual-information rankings, correlations, histograms
+and t-SNE plots. When CSVs are absent, it uses synthetic demonstration data;
+those plots cannot support measured dataset or classifier claims. Memory
+figures are analytical budgets, not measured Nano flash or peak SRAM.
 
 Usage:
     python research/explore_nbaiot.py --data-dir data/raw/nbaiot --n-features 20
-    python research/explore_nbaiot.py --n-features 30 --output-dir research/eda
+
+The saved images in research/eda/ are historical exploratory outputs. See
+that directory's README for their provenance limits.
 """
 
 import argparse

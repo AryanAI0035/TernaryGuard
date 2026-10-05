@@ -82,8 +82,7 @@ marked invalidated under `docs/benchmarks/`.
 
 ## Phase 3 freeze decision (2026-10-01)
 
-Repository reconciliation is complete: Antigravity's user-supplied command
-output and Codex's local checks identify the same repository at
+The supplied and local Git outputs identified the same repository at
 `/Users/aryanshukla/Desktop/TernaryGuard`, branch `master`, correction commit
 `c6cb9e8f826d3514ed811f8b3f6c4831e1dfa214`, and a clean working tree at that commit.
 

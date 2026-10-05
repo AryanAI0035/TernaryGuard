@@ -3,7 +3,9 @@
 ## Project entry
 
 **TernaryGuard — Embedded ML for IoT Botnet Classification**
+
 Python, PyTorch, C, AVR-GCC, Arduino Nano, PlatformIO
+
 [GitHub repository](https://github.com/AryanAI0035/TernaryGuard)
 
 - Built a 20→64→32→11 ternary neural network with 2-bit packed weights and a 1,696-byte parameter footprint, 9.13× smaller than its FP32 counterpart; achieved 81.08% accuracy and 0.7821 macro-F1 on 69,040 held-out-device N-BaIoT samples.
@@ -16,7 +18,7 @@ If space allows only one bullet:
 
 ## Description for a portfolio or GitHub profile
 
-TernaryGuard is a completed research prototype that carries one frozen IoT botnet classifier from PyTorch into a packed C engine and actual Arduino Nano firmware. It includes device-held-out evaluation, guarded exports, full workstation parity checks, and archived hardware serial/timing/resource evidence. An FPGA accelerator is maintained separately as future work.
+TernaryGuard runs one compact IoT botnet classifier in PyTorch, C and Arduino Nano firmware. The project includes evaluation on a held-out device, checked model exports, full-test-set C comparisons and recorded Nano measurements. FPGA acceleration is future work.
 
 ## Details to explain in interviews
 

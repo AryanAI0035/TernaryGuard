@@ -1,3 +1,5 @@
+> Initial audit of an earlier repository state. It records defects and invalidated metrics before correction; use [the accepted corrections](../phase3_corrections.md) and [current documentation](../README.md) for the final results.
+
 # TernaryGuard phase 3 review
 
 Reviewed 2026-09-30 at commit `4bcea726075afcc07bfe7ed58967aca819747faa`.

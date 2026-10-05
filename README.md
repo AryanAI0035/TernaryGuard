@@ -1,24 +1,10 @@
 # TernaryGuard
 
-**A small neural network, a C inference engine, and a real Arduino Nano.**
+TernaryGuard is an IoT botnet classifier trained in PyTorch and implemented in C and Arduino Nano firmware. It uses weights restricted to −1, 0 and +1 to reduce storage and simplify the dot product.
 
-[![Core tests](https://github.com/AryanAI0035/TernaryGuard/actions/workflows/core-tests.yml/badge.svg)](https://github.com/AryanAI0035/TernaryGuard/actions/workflows/core-tests.yml)
-[![Release](https://img.shields.io/badge/release-v1.0.0-087f8c)](https://github.com/AryanAI0035/TernaryGuard/releases/tag/v1.0.0)
-[![License: MIT](https://img.shields.io/badge/license-MIT-3479b5)](LICENSE)
+The model has a 1,696-byte parameter payload and reaches 81.08% test accuracy. The C engine matches Python on all 69,040 test rows. The physical Nano was checked on 5,855 unique rows. These are different checks; matching Python does not mean every classification is correct.
 
-TernaryGuard explores a practical question: **can an IoT botnet classifier fit on a tiny microcontroller and still reproduce its Python model's predictions?**
-
-The project trains a compact model on N-BaIoT traffic statistics, converts it into packed weights, and runs it in C and on a physical Arduino Nano. The software and Nano research prototype is complete. [FPGA acceleration](future-scope/README.md) is future work.
-
-![System overview: traffic measurements become 20 prepared features, pass through a ternary neural network, and are checked in workstation C and on a physical Nano.](docs/assets/system-overview.svg)
-
-| Model parameters | Held-out test accuracy | Workstation agreement | Physical Nano coverage |
-|---:|---:|---:|---:|
-| **1,696 bytes** | **81.08%** | **69,040 / 69,040** | **5,855 unique rows** |
-
-Model parameters are not the firmware size. “Agreement” means the same predicted class as the frozen Python reference; it does not mean every prediction is correct.
-
-[Plain-language explanation](#what-it-does-in-plain-language) · [Why ternary?](#why-ternary-weights) · [Results](#results-and-the-tradeoff) · [Try it](#try-it-without-a-board) · [Technical details](#technical-details) · [Evidence](#documentation-and-evidence)
+The software and Nano research prototype is complete. FPGA acceleration is [future work](future-scope/README.md).
 
 ## What it does, in plain language
 
@@ -40,7 +26,15 @@ A typical neural network uses weights that can take many decimal values. This mo
 - **0:** skip it.
 - **−1:** subtract the input.
 
-![Ternary explanation: +1 adds, 0 skips, and −1 subtracts. The example 4 + 0 − 5 + 3 gives 2. Each weight is stored in two bits.](docs/assets/ternary-explained.svg)
+For example:
+
+```text
+Inputs:   [ 4, 2,  5, 3 ]
+Weights:  [ 1, 0, -1, 1 ]
+Sum:        4 + 0 - 5 + 3 = 2
+```
+
+This is a small integer example of the operation, not a captured model input.
 
 The weights are packed into **two bits each**. The C and AVR engines convert activations to bounded integers before the dot product, so the inner accumulation loop uses integer add/subtract/skip operations.
 
@@ -50,11 +44,27 @@ That does **not** make the whole network integer-only or multiplication-free. In
 
 The model is much smaller than its FP32 baseline, but its classification accuracy is lower. Both sides of that tradeoff matter. FP32 is the conventional 32-bit floating-point model; the INT8 comparison simulates weights restricted to 8-bit values.
 
-![Final model comparison: FP32 uses 15,484 bytes at 89.60% test accuracy; simulated INT8 uses 4,456 bytes at 88.75%; ternary uses 1,696 bytes at 81.08%.](docs/assets/model-tradeoff.svg)
+| Model | Parameter storage | Test accuracy |
+|---|---:|---:|
+| FP32 baseline | 15,484 bytes | 89.60% |
+| INT8 weight simulation | 4,456 bytes | 88.75% |
+| Ternary | 1,696 bytes | 81.08% |
 
-The chart uses only the [final run](results.csv), with the same **20 → 64 → 32 → 11** architecture. Storage is the accounted model-parameter payload, excluding firmware and runtime RAM. INT8 here is **weight-quantization simulation with FP32 execution**, not an integer runtime benchmark.
+The table uses only the [final run](results.csv), with the same **20 → 64 → 32 → 11** architecture. Storage is the accounted model-parameter payload, excluding firmware and runtime RAM. INT8 here is **weight-quantization simulation with FP32 execution**, not an integer runtime benchmark.
 
 **Known weakness: BASHLITE TCP recall is 1/5,555 (0.018%).** The model recognizes only one of those attack examples as that specific class. The same example, at frozen test index **59782**, is detected by Python, C and the Nano. This weakness prevents a claim of reliable recognition of all 11 classes. It does not by itself mean every missed TCP example was classified as normal traffic.
+
+### Recorded training curve
+
+![Training and validation cross-entropy loss over the 26 recorded epochs of the final ternary run; the saved checkpoint is from epoch 16.](docs/assets/training-loss.png)
+
+This graph is plotted directly from the 26 epoch records in [the final training log](docs/benchmarks/phase3_final_seed42/ternary_2bit.json). The solid line is training loss; the dashed line is validation loss. Loss measures prediction error during training, so lower is better. The vertical line marks the saved checkpoint at epoch 16. Checkpoint selection used validation macro-F1 and per-class recall checks, rather than choosing the lowest validation loss shown here.
+
+Training used devices 1–7; validation used device 8. Device 9 was reserved for testing. This is the recorded run, not a new experiment. To regenerate the plot:
+
+```sh
+python3 scripts/render_readme_assets.py
+```
 
 ### What was actually checked?
 
@@ -194,7 +204,7 @@ Predictions must agree exactly. Logits may differ within **`atol=rtol=2e-5`**. T
 - [Repository packaging and fresh-clone verification](docs/project_release_validation.md)
 - [Résumé wording with measurement scope](docs/resume.md)
 
-The README visuals are explanatory diagrams and a chart generated from the final results. They are not board photographs, live traffic screenshots or new measurements. Regenerate them with `python3 scripts/render_readme_assets.py`. Earlier EDA images have incomplete provenance and are not used here. Superseded plans and audits remain in [the archive](docs/archive/).
+The training graph uses the final recorded run. Earlier EDA images have incomplete provenance and are not used here. Superseded plans and audits remain in [the archive](docs/archive/).
 
 ## Future work
 

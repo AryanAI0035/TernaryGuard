@@ -1,5 +1,5 @@
-# README visuals
+# Training plot
 
-`system-overview` and `ternary-explained` are explanatory diagrams, not hardware photographs or measured traces. `model-tradeoff` reads only the active final run in the root results.csv. Parameter storage excludes firmware/RAM; INT8 is weight simulation with FP32 execution.
+`training-loss.png` plots the `train_loss` and `val_loss` fields from the 26 epochs in `docs/benchmarks/phase3_final_seed42/ternary_2bit.json`. The checkpoint marker reads the same report's `best_epoch` field (16). Values are plotted as recorded, without smoothing or synthetic points.
 
-Regenerate SVG and PNG versions with `python3 scripts/render_readme_assets.py`. SVGs are used in the GitHub README; PNGs allow visual inspection. No legacy exploratory images are used.
+Regenerate with `python3 scripts/render_readme_assets.py`. This is historical training data, not a new experiment or hardware measurement.

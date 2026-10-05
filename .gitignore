@@ -22,8 +22,7 @@ conda-env/
 .ipynb_checkpoints/
 *.ipynb_metadata/
 
-# PyTorch checkpoints — DO NOT commit to git (bloats repo history)
-# Final trained model goes in a GitHub Release, not in the tree.
+# Training checkpoints stay local; only the small frozen reference is versioned below.
 *.pt
 *.pth
 *.ckpt
@@ -44,15 +43,15 @@ engine-arduino/.pioenvs/
 engine-arduino/.piolibdeps/
 
 # ──────────────── Vivado / FPGA ────────────────
-engine-fpga/vivado_project/
-engine-fpga/*.jou
-engine-fpga/*.log
-engine-fpga/*.str
-engine-fpga/*.runs/
-engine-fpga/*.cache/
-engine-fpga/*.hw/
-engine-fpga/*.ip_user_files/
-engine-fpga/.Xil/
+future-scope/fpga/vivado_project/
+future-scope/fpga/*.jou
+future-scope/fpga/*.log
+future-scope/fpga/*.str
+future-scope/fpga/*.runs/
+future-scope/fpga/*.cache/
+future-scope/fpga/*.hw/
+future-scope/fpga/*.ip_user_files/
+future-scope/fpga/.Xil/
 *.bit
 *.ltx
 *.dcp
@@ -60,15 +59,15 @@ engine-fpga/.Xil/
 *.wcfg
 
 # Vivado IP and simulation caches
-engine-fpga/xsim.dir/
-engine-fpga/*.sim/
-engine-fpga/*.synth/
-engine-fpga/*.impl/
+future-scope/fpga/xsim.dir/
+future-scope/fpga/*.sim/
+future-scope/fpga/*.synth/
+future-scope/fpga/*.impl/
 
 # ──────────────── Node / React ────────────────
 node_modules/
-dashboard/frontend/build/
-dashboard/frontend/.next/
+future-scope/dashboard/frontend/build/
+future-scope/dashboard/frontend/.next/
 .env.local
 .env.development.local
 .env.test.local
@@ -98,7 +97,12 @@ logs/
 *.log
 .pytest_cache/
 Information Theory in DL/
-checkpoints/
+checkpoints/*
+!checkpoints/phase3_final_seed42/
+checkpoints/phase3_final_seed42/*
+!checkpoints/phase3_final_seed42/ternary_2bit.pt
+!checkpoints/phase3_final_seed42/data_manifest.json
+!checkpoints/phase3_final_seed42/split_rows.npz
 data/
 # Keep the small validated shared header; full training bundles stay local.
 !model_weights.h

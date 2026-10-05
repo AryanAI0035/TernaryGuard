@@ -1,3 +1,5 @@
+> **Future-scope workbook.** Core TernaryGuard is complete through software and Nano validation. This optional FPGA work does not block that completion. In this repository the code lives in `future-scope/fpga/`; the portable ZIP intentionally retains `engine-fpga/`, so all borrowed-laptop commands below remain valid. Previously transferred ZIPs remain usable.
+
 # Phase 7 — Detailed manual Vivado verification
 
 Updated **2026-10-04**. Follow this on the borrowed laptop. Phase 6 RTL is locally verified; **real Vivado/XSim verification is still pending**. This phase covers simulation, synthesis and implementation for `xc7a35tcpg236-1` (Basys 3). It does not involve a physical FPGA board. Dashboard work stays deferred until the results have been reviewed here.
@@ -34,7 +36,7 @@ Floating-point logits need not be bit-identical to PyTorch. Integer ternary accu
 
 Use the newly supplied **`phase7-vivado-handoff-detailed.zip`**, together with its adjacent **`.zip.sha256`** checksum file. The older `phase7-vivado-handoff.zip` has the shorter manual; it should not be your working copy for these instructions.
 
-The files are in the repository's `engine-fpga/build/` folder. Transfer them using a USB drive or another file transfer method. You do not need the entire repository, raw N-BaIoT dataset, Torch installation or Arduino.
+The files are in the repository's `future-scope/fpga/build/` folder. Transfer them using a USB drive or another file transfer method. You do not need the entire repository, raw N-BaIoT dataset, Torch installation or Arduino.
 
 The ZIP contains:
 

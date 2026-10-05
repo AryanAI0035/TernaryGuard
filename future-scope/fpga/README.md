@@ -1,7 +1,9 @@
+> **Optional future extension.** The software and Arduino research prototype is complete independently. FPGA is excluded from core acceptance and résumé deployment claims. Historical Phase 6/7 names below describe this extension only.
+
 # TernaryGuard — FPGA accelerator
 
 **Phase 6: locally verified RTL. Phase 7: manual Vivado acceptance pending.**
-Target `xc7a35tcpg236-1` (Basys 3), simulation/synthesis only; no physical board deployment. Dashboard work remains deferred under the 2026-10-03 scope change. See [Phase 7 manual instructions](../docs/phase7_manual_vivado.md) and [Phase 6 evidence](../docs/phase6_local_validation.md).
+Target `xc7a35tcpg236-1` (Basys 3), simulation/synthesis only; no physical board deployment. Dashboard work remains deferred under the 2026-10-03 scope change. See [Phase 7 manual instructions](docs/phase7_manual_vivado.md) and [Phase 6 evidence](docs/phase6_local_validation.md).
 
 ## Datapath
 
@@ -18,18 +20,18 @@ The input stream contains **20 preprocessed binary32 values** from the frozen si
 From the repository root, with Python's existing model dependencies and Verilator installed:
 
 ```sh
-python3 engine-fpga/prepare.py --vectors test --output engine-fpga/build/frozen
-python3 engine-fpga/run_compiled.py --vectors engine-fpga/build/frozen
-python3 -m pytest model/tests/ -v --tb=short
-python3 engine-fpga/make_handoff.py --vectors engine-fpga/build/frozen --output engine-fpga/build/phase7-vivado-handoff.zip
+python3 future-scope/fpga/prepare.py --vectors test --output future-scope/fpga/build/frozen
+python3 future-scope/fpga/run_compiled.py --vectors future-scope/fpga/build/frozen
+python3 -m pytest future-scope/fpga/tests/ -v --tb=short
+python3 future-scope/fpga/make_handoff.py --vectors future-scope/fpga/build/frozen --output future-scope/fpga/build/phase7-vivado-handoff.zip
 ```
 
 The generator checks the existing active artifact hashes, runs `verify_active`, loads frozen row identities and computes a fresh PyTorch oracle. It derives ROM bytes and binary32 constants from the exact root `model_weights.h`; it does not regenerate or modify that header. The comparator checks all generated hashes, exact prediction/class-output agreement, per-logit tolerance (`atol=rtol=2e-5`) and TCP **1/5,555 at index 59782**.
 
-`run_local.py` offers slower Icarus/VPI network simulation. MAC, array, numeric, full golden-vector and synthesis-wrapper regressions are in `model/tests/test_fpga_port.py`. Tool-dependent tests report explicit skips if their required simulator is absent; no skip is accepted as proof of FPGA correctness.
+`run_local.py` offers slower Icarus/VPI network simulation. MAC, array, numeric, full golden-vector and synthesis-wrapper regressions are in `future-scope/fpga/tests/test_fpga_port.py`. Tool-dependent tests report explicit skips if their required simulator is absent; no skip is accepted as proof of FPGA correctness.
 
 ## Manual Vivado gate
 
-Use the portable ZIP and [instructions](../docs/phase7_manual_vivado.md) on the borrowed laptop. Scripts generate XSim, post-synthesis/post-route utilization, timing, DRC, routing and **vectorless power** reports. The target clock is 100 MHz; this is a constraint, not an achieved frequency until routing closes.
+Use the portable ZIP and [instructions](docs/phase7_manual_vivado.md) on the borrowed laptop. Scripts generate XSim, post-synthesis/post-route utilization, timing, DRC, routing and **vectorless power** reports. The target clock is 100 MHz; this is a constraint, not an achieved frequency until routing closes.
 
 No LUT/FF/DSP/BRAM count, WNS/TNS or wattage is claimed without an actual Vivado report. RTL is written for synthesis; vendor synthesis and timing closure remain unverified. The whole network includes FP multipliers, even though its ternary MAC array uses add/subtract/skip only.

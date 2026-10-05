@@ -1,3 +1,5 @@
+> Historical phase record: measurements and test counts below describe their recorded acceptance run. The completed core now includes the model, C engine and physically validated Nano; FPGA is optional future scope. See [current project documentation](README.md). Historical budgets do not replace measured Nano resources.
+
 # Phase 4 C engine verification
 
 Frozen reference: commit 54d5aa3 and model/active_model.json. Executed on Apple M3

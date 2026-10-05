@@ -1,0 +1,23 @@
+name: Core model, C and Nano host regressions
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install core dependencies
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements.txt
+      - name: Replay frozen engineering vectors
+        run: python scripts/demo.py
+      - name: Core tests (no FPGA tools or physical board required)
+        run: python -m pytest model/tests/ -v --tb=short

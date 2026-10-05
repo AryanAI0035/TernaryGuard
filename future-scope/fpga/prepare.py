@@ -124,7 +124,7 @@ endmodule
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--project-root',type=Path,default=Path(__file__).resolve().parents[1])
+    p.add_argument('--project-root',type=Path,default=next(p for p in Path(__file__).resolve().parents if (p/'model/active_model.json').is_file()))
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--vectors',choices=['golden','test'],default='test')
     a=p.parse_args();prepare(a.project_root,a.output,a.vectors)

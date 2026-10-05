@@ -1,3 +1,5 @@
+> Historical phase record: measurements and test counts below describe their recorded acceptance run. The completed core now includes the model, C engine and physically validated Nano; FPGA is optional future scope. See [current project documentation](README.md). Historical budgets do not replace measured Nano resources.
+
 # TernaryGuard architecture and deployment budget
 
 The initial phase-3 comparison uses the same `20 → 32 → 16 → 11` architecture for FP32,

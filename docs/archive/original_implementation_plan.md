@@ -1,3 +1,5 @@
+> Historical proposal, preserved for context. It contains aspirational targets and superseded budgets. For completed scope and verified measurements, use the root README and docs/README.md. FPGA and dashboard are optional future work.
+
 # TernaryGuard — Complete Implementation Plan
 ### One Ternary AI Model. Three Silicon-to-Software Deployments. One Cybersecurity Mission.
 

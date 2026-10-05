@@ -1,0 +1,24 @@
+$ cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic -ffp-contract=off -fno-fast-math -fstack-usage -I/private/var/folders/ts/hz1rg3s1089fdfdk7p99_nfh0000gn/T/ternaryguard-demo-zzp9jpu1 -I/Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-software/ternary_infer.c /Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/engine-software/runner.c -lm -o /private/var/folders/ts/hz1rg3s1089fdfdk7p99_nfh0000gn/T/ternaryguard-demo-zzp9jpu1/ternary_infer
+{
+  "scope": "264 bundled preprocessed engineering vectors; not dataset accuracy or live traffic",
+  "samples": 264,
+  "checkpoint_sha256": "c335f7d468c932c3855b190061f452ff2b5b0f3fca8276bf1bff6d674ad13774",
+  "atol": 2e-05,
+  "rtol": 2e-05,
+  "recorded_golden": {
+    "prediction_matches": 264,
+    "prediction_disagreements": 0,
+    "max_abs_logit_error": 0.0
+  },
+  "existing_header": {
+    "prediction_matches": 264,
+    "prediction_disagreements": 0,
+    "max_abs_logit_error": 3.814697265625e-06
+  },
+  "c_engine": {
+    "prediction_matches": 264,
+    "prediction_disagreements": 0,
+    "max_abs_logit_error": 5.7220458984375e-06
+  },
+  "known_dataset_limitation": "BASHLITE TCP recall 1/5555 (0.018%); not re-evaluated by this demo"
+}

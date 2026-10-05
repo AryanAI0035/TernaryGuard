@@ -1,0 +1,9 @@
+{
+  "model/active_model.json": "1e0ac583b95827c07ded92621c091a4420c31655d0002755009cb8c6b8e9e994",
+  "model/export_manifest.json": "b104b4f127976dcb21e2c57f47dbe53ce5f3b88af5cae8074d8168beaf53949b",
+  "model/feature_config.json": "9922f3336cc0aa9a268a81954d1c0592e84c92959c99a7c836c66d36ac3856f8",
+  "model_weights.h": "e1d919a0049e2c492d4ce54168cf9cb223bd90b4b1b74554539089ccf4c60ee8",
+  "checkpoints/phase3_final_seed42/ternary_2bit.pt": "c335f7d468c932c3855b190061f452ff2b5b0f3fca8276bf1bff6d674ad13774",
+  "engine-software/ternary_infer.c": "3702e47890ff7987fa72b501499ed05b1de0829d6e94d8585d7be3ea5892d1c7",
+  "engine-arduino/src/ternary_avr.c": "f00f46d5820d07cc7f8b61012bcbbe8bd2bfbc0954b95d985b836d014e6acc33"
+}

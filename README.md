@@ -1,168 +1,79 @@
 # TernaryGuard
 
-> **One Ternary AI Model. Three Silicon-to-Software Deployments. One Cybersecurity Mission.**
+**A completed embedded machine learning research prototype for IoT botnet classification, built in PyTorch, C and Arduino Nano.**
 
-A 1.58-bit ternary neural network (`weights ∈ {-1, 0, 1}`) for IoT botnet/DDoS intrusion detection, being developed for three targets to prove a single engineering thesis:
+TernaryGuard trains an 11-class neural network on N-BaIoT traffic statistics, packs its weights into two bits each, and runs the frozen model through an integer ternary dot product on a workstation and an actual ATmega328P Nano. The dot product decodes **0, +1, −1** and uses add/subtract/skip; preprocessing, normalization and final scaling still use floating point.
 
-**Ternary weight dot products use add/subtract/skip. The project aims to validate the same compact model in desktop C, an Arduino Nano with 2KB RAM, and FPGA simulation/synthesis.**
+The delivered scope is the trained model, verified export, C engine and physically tested Nano firmware. **FPGA is optional future work**, preserved under [future-scope/](future-scope/README.md). No FPGA deployment, Vivado timing closure or dashboard implementation is claimed.
 
-Current status: Phases 0–5 are complete for the frozen research reference, including desktop C parity and measured Arduino Nano validation. [Phase 6 local FPGA RTL validation](docs/phase6_local_validation.md) passes all 69,040 frozen predictions. Per the current scope decision, [Phase 7 is manual Vivado verification](docs/phase7_manual_vivado.md) on a borrowed laptop; XSim parity, synthesis, routing, timing closure and tool power estimates remain pending. FPGA work is simulation/synthesis only, without a physical board. Dashboard work is deferred. The model remains a research reference: BASHLITE TCP recall is 1/5,555 (0.018%), and class-level quality blocks complete 11-class deployment. See [corrected results and limitations](docs/phase3_corrections.md).
+## Verified results
 
----
+| Result | Value | Evidence and scope |
+|---|---:|---|
+| Frozen network | 20 → 64 → 32 → 11 | [Active identity](model/active_model.json); ternary layers with RMSNorm |
+| Held-out-device test accuracy / macro-F1 | **81.08% / 0.7821** | [Final run](docs/benchmarks/phase3_final_seed42/ternary_2bit.json), 69,040 rows from device 9 |
+| Packed model parameters | **1,696 B**, 9.13× smaller than FP32 | [Accounting](docs/phase3_corrections.md): 920 B packed weights plus biases, scales and gamma; exported constants including metadata total 1,712 B |
+| Workstation prediction parity | **69,040 / 69,040**, zero disagreements | [C validation](docs/phase4_validation.md), frozen PyTorch reference |
+| Workstation median inference | **3.763 μs** | [Apple M3 benchmark](docs/phase4_validation.md), warm cache, preprocessing included, I/O excluded |
+| Nano application flash / static SRAM | **8,076 B / 1,212 B** | [Physical report](docs/phase5_hardware_validation.md), avr-size and flash verification |
+| Nano observed SRAM high-water mark | **1,321 B** | Physical SRAM canary measurement; approximate, 727 B untouched gap |
+| Nano median inference | **36.308 ms** | Physical micros() measurement on 330 stratified rows, preprocessing included, UART excluded |
+| Nano prediction parity | **5,855 unique rows**, zero disagreements | 330 stratified + all 5,555 TCP rows; 5,885 transactions with 30 overlapping rows |
 
-## Architecture
+**Known limitation:** BASHLITE TCP recall is **1/5,555 (0.018%)** on the frozen test split. The Nano reproduces the same sole detection at test index 59782. The model effectively fails to detect this attack class; overall accuracy must not hide that. This is a completed research prototype, not a production-ready intrusion detector.
 
-```
-                     ┌─────────────────────────────┐
-                     │   Ternary Model (trained)    │
-                     │   absmean quant + STE        │
-                     └──────────────┬───────────────┘
-                                    │  same weights, same math
-         ┌──────────────────────────┼──────────────────────────┐
-         ▼                          ▼                          ▼
- ┌───────────────┐         ┌────────────────┐         ┌────────────────┐
- │ SOFTWARE       │         │ ARDUINO NANO   │         │ FPGA (Vivado)  │
- │ C reference    │         │ ATmega328P     │         │ Basys 3        │
- │ engine         │         │ 32KB / 2KB     │         │ xc7a35t (sim)  │
- └───────┬────────┘         └───────┬────────┘         └───────┬────────┘
-         │                          │                          │
-         └──────────────┬───────────┴──────────────┬───────────┘
-                         ▼                          ▼
-                 Serial / UART              Simulation replay
-                         │                          │
-                         └────────────┬─────────────┘
-                                       ▼
-                    ┌──────────────────────────────────┐
-                    │  FastAPI backend + React dashboard │
-                    │  live classifications, 3-way race  │
-                    └──────────────────────────────────┘
+## How it works
+
+```text
+N-BaIoT CSV statistics (115 columns)
+  → 20 training-selected features
+  → signed-log1p + training-fit StandardScaler
+  → RMSNorm / ternary layer / ReLU
+  → RMSNorm / ternary layer / ReLU
+  → ternary output layer → 11 logits → class
 ```
 
-## Headline Numbers
+Training uses devices 1–7 (411,915 rows), validation device 8 (69,045), and test device 9 (69,040). Feature selection, redundancy filtering and scaler fitting use training rows only. Model selection uses validation metrics. [Methodology and corrections](docs/phase3_corrections.md) explain the split and rejected earlier results.
 
-| Metric | Software | Arduino Nano | FPGA (Basys 3) |
-|--------|----------|-------------|----------------|
-| Accuracy | — | — | — |
-| Latency | — | — | — |
-| Memory | — | — | — |
-| Power | — | — | — |
+The C and AVR engines use a shared exponent to convert activations to bounded int64 values before accumulating packed weights. The inner dot product has no multiply or floating-point operations; scaling and the rest of the network remain floating point. Nano weights and constants reside in PROGMEM. The Nano performs log/scaler preprocessing in float32; its precision and physical coverage are documented separately from the workstation's float64 preprocessing.
 
-> *Numbers will be populated as each phase completes.*
+Inputs are already extracted N-BaIoT traffic statistics. Packet capture, online feature extraction and live network blocking are outside the delivered scope.
 
-## Repository Structure
+## Run from a fresh clone
 
-```
-TernaryGuard/
-├── research/              # Notebooks, quantization experiments
-├── model/                 # Training code, checkpoints, tests
-├── engine-software/       # C/Python reference inference
-├── engine-arduino/        # Embedded C, PlatformIO (ATmega328P)
-├── engine-fpga/           # Verilog RTL, Vivado, testbenches
-├── dashboard/
-│   ├── backend/           # FastAPI + WebSockets
-│   └── frontend/          # React + Recharts/D3
-├── docs/
-│   ├── benchmarks/        # Comparison tables, plots
-│   └── diagrams/          # Architecture diagrams
-├── results.csv            # Experiment tracking (all phases)
-├── plot_results.py        # Benchmark visualization
-└── requirements.txt       # Python dependencies
-```
+Requires Python **3.11+**, a C compiler (`cc`), and the dependencies below. No Nano, raw dataset or FPGA tools are needed for the bundled engineering replay or core regression tests.
 
-## Quick Start
-
-```bash
+```sh
+git clone https://github.com/AryanAI0035/TernaryGuard.git
+cd TernaryGuard
 python3 -m venv .venv
+# macOS/Linux:
 source .venv/bin/activate
-pip install -r requirements.txt
-python3 research/download_nbaiot.py
-python3 -m pytest -q
-python3 model/train.py --run-id my_phase3_run
-python3 model/finalize_phase3.py --runs checkpoints/my_phase3_run \
-  --output-dir checkpoints/my_final_run
-python3 plot_results.py --phase 3 --results checkpoints/my_final_run/results.csv
+# Windows PowerShell instead: .venv\Scripts\Activate.ps1
+python3 -m pip install -r requirements.txt
+python3 scripts/demo.py
+python3 -m pytest model/tests/ -v --tb=short
 ```
 
-The default run uses 550,000 samples across nine devices: devices 1–7 for
-training, 8 for validation, and 9 for testing. A signed log transform (`sign(x) * log1p(abs(x))`) handles skewed statistics,
-including negative covariance values. Selection and normalization fit training
-data only. Use `--feature-transform identity` for the comparison without the log transform. Mutual-information ranking excludes near-duplicate features
-with absolute correlation at least 0.98, measured on the same training-only
-selection sample. All three precision variants share preprocessing and architecture.
+The demo compares the frozen checkpoint, existing exported header and compiled C engine on **264 bundled preprocessed engineering vectors**. It is an inference replay, not a fresh accuracy evaluation or a live traffic monitor. C/AVR compilation tests require a compatible `cc`; run those on macOS, Linux or WSL. The default/core suite contains **99 tests**.
 
-Checkpoints and detailed reports are saved under `checkpoints/<run-id>/`.
-Finalization requires nonzero recall for every validation class, chooses the
-highest validation macro-F1 among eligible widths, and trains FP32/INT8 baselines
-with the selected architecture and matching maximum epoch budget. This is a
-minimal sanity gate, not a deployment acceptance threshold. The checked-in
-reference is identified in `model/active_model.json`.
-Results append to `results.csv`; plots default to the latest run. INT8 means
-simulated weight-only quantization with FP32 execution, not an INT8 runtime.
+The exact frozen checkpoint, data manifest and split identities are included under `checkpoints/phase3_final_seed42/`; the raw dataset and other training checkpoints are excluded. For full 69,040-row verification, dataset download, C benchmarking and Nano flashing, see [reproduction instructions](docs/reproduce.md).
 
-Export an existing bundle without refitting or accessing the dataset:
+## Repository
 
-```bash
-python3 model/train.py --export-only \
-  --checkpoint checkpoints/my_final_run/ternary_2bit.pt \
-  --output-dir checkpoints/my_final_run/export
-```
+| Path | Purpose |
+|---|---|
+| [model/](model/) | Training, preprocessing, artifact validation, golden vectors and core tests |
+| [model_weights.h](model_weights.h) | Exact frozen packed weights and trained constants |
+| [checkpoints/phase3_final_seed42/](checkpoints/phase3_final_seed42/) | Small frozen reference bundle; no retraining needed |
+| [engine-software/](engine-software/README.md) | C inference engine, guarded build, full-dataset parity and benchmarks |
+| [engine-arduino/](engine-arduino/README.md) | Nano firmware, PROGMEM, serial protocol and physical validation |
+| [docs/](docs/README.md) | Evidence, methodology, reproduction and [résumé wording](docs/resume.md) |
+| [research/](research/) | Dataset preparation, exploratory analysis and diagnostic scripts |
+| [future-scope/](future-scope/README.md) | Optional FPGA work and dashboard placeholders |
 
-Recheck the exported header on all frozen test rows and generate golden vectors
-covering every class:
+Original implementation proposals are [archived](docs/archive/original_implementation_plan.md). Historical phase names and budgets are retained as records; current completion scope and measured results are defined above. Invalidated CSVs remain explicitly labeled and cannot produce unmarked plots through the plotting tool.
 
-```bash
-python3 model/validate_export.py \
-  --checkpoint checkpoints/my_final_run/ternary_2bit.pt
-```
+## License and dataset
 
-Each run preserves all trained models, ordered features/scaler, source hashes,
-split row identities, training history, per-class and binary metrics, and export
-metadata. Legacy bare state dictionaries are deliberately rejected by export.
-`--ablation-only` creates a separate run and does not change production artifacts.
-Run IDs/output directories must be new for training. Legacy phase-3 results are
-archived as invalidated under `docs/benchmarks/` and must not be mixed with new
-held-out-device results.
-
-## Dataset
-
-**N-BaIoT** — purpose-built for IoT botnet detection (Mirai, BASHLITE variants).
-
-## Tech Stack
-
-| Layer | Tools |
-|-------|-------|
-| Model Training | PyTorch, NumPy, scikit-learn |
-| Software Engine | C (from-scratch, no deps) |
-| Embedded | AVR-GCC, PlatformIO, Arduino Nano |
-| FPGA | Verilog, Xilinx Vivado, XSim |
-| Backend | FastAPI, WebSockets |
-| Frontend | React, Recharts/D3 |
-| Tracking | CSV logging + matplotlib |
-
-## License
-
-MIT
-
----
-
-*Built to prove that the same model can run everywhere — from desktop to 2KB of RAM to custom silicon.*
-
-
-### Verify the active artifacts without rewriting them
-
-Run python3 model/validate_export.py --verify-active to verify the checkpoint,
-existing header, and preprocessing referenced by model/active_model.json.
-Checkpoint and header SHA-256 hashes cover file bytes; preprocessing follows the
-existing manifest convention: SHA-256 of canonical JSON (normalized string keys,
-sorted keys). The verifier also checks checkpoint/config/architecture agreement
-and compares the exact existing header against the checkpoint on all frozen test
-rows. It writes no artifacts. --active-model PATH supports another active
-manifest; its paths are relative to the parent of its containing model directory.
-The existing --checkpoint/--output-dir mode still regenerates an export.
-
-### Plot invalidated historical results
-
-A case-insensitive INVALIDATED substring in any CSV notes field blocks plotting
-by default, before run/phase filtering. --allow-invalidated explicitly permits
-historical plots and overlays **INVALIDATED — DO NOT USE** in red on every
-generated figure. Current valid result files need no extra flag.
+Project code and the frozen model are released under the [MIT License](LICENSE). N-BaIoT is an external research dataset credited to Meidan et al.; its data is not included here or relicensed by this repository. The download helper uses the UCI archive. Results describe this particular frozen experiment and validation scope.

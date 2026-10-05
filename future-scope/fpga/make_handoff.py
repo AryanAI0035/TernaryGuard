@@ -12,8 +12,18 @@ def package(root,vectors,target):
     meta=json.loads((vectors/'vectors.json').read_text())
     if meta['vectors']!='test' or meta['samples']!=69040:raise ValueError('Full frozen test vectors required')
     files={}
+    engine=Path(__file__).resolve().parent
     for pattern in ['rtl/*.sv','tb/*.sv','tb/*.c','tb/*.cpp','scripts/*.tcl','constraints/*.xdc','*.py','README.md']:
-        for p in (root/'engine-fpga').glob(pattern):files['engine-fpga/'+str(p.relative_to(root/'engine-fpga'))]=p.read_bytes()
+        for p in engine.glob(pattern):files['engine-fpga/'+str(p.relative_to(engine))]=p.read_bytes()
+    # Keep the established borrowed-laptop layout independent of repository scope.
+    files['engine-fpga/README.md'] = (
+        '# Optional TernaryGuard FPGA handoff\n\n'
+        'The software/Nano research prototype is complete. This package is future FPGA work.\n'
+        'Follow ../PHASE7_MANUAL.md from the extraction root. The package intentionally\n'
+        'uses engine-fpga/ even though repository sources live in future-scope/fpga/.\n'
+        'Verify first: python engine-fpga/verify_handoff.py .\n'
+        'Actual Vivado/XSim, routed timing and resource/power reports remain pending.\n'
+    ).encode()
     for name in ['inputs.mem','model_rom.sv','reference.npz','vectors.json']:
         files['vectors/'+name]=(vectors/name).read_bytes()
     for name,key in [('inputs.mem','input_sha256'),('model_rom.sv','rom_sha256'),('reference.npz','reference_sha256')]:
@@ -23,7 +33,7 @@ def package(root,vectors,target):
         files[name]=(root/name).read_bytes()
     for name,key in [(active['checkpoint'],'checkpoint_sha256'),(active['header'],'header_sha256')]:
         if hashlib.sha256(files[name]).hexdigest()!=meta['active_hashes'][key]:raise ValueError('Active artifact changed: '+name)
-    files['PHASE7_MANUAL.md']=(root/'docs/phase7_manual_vivado.md').read_bytes()
+    files['PHASE7_MANUAL.md']=(engine/'docs/phase7_manual_vivado.md').read_bytes()
     files['evidence/local-parity.json']=(vectors/'verilator-parity.json').read_bytes()
     files['evidence/local-commands.log']=(vectors/'compiled/commands.log').read_bytes()
     manifest=dict(active_hashes=meta['active_hashes'],files={name:hashlib.sha256(content).hexdigest() for name,content in sorted(files.items())})
@@ -35,4 +45,4 @@ def package(root,vectors,target):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--vectors',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
-    a=p.parse_args();package(Path(__file__).resolve().parents[1],a.vectors,a.output)
+    a=p.parse_args();package(next(p for p in Path(__file__).resolve().parents if (p/'model/active_model.json').is_file()),a.vectors,a.output)

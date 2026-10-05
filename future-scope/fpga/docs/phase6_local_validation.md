@@ -1,3 +1,5 @@
+> **Historical local evidence for an optional future extension.** Commands and source-hash records describe the original layout at the recorded commits. Current source is in `future-scope/fpga/`; evidence is in `../evidence/`. Core completion does not depend on Vivado.
+
 # Phase 6 — Local RTL validation; Phase 7 manual Vivado gate pending
 
 Date: 2026-10-03. Starting repository HEAD: 759740a (includes the approved Phase 5 hardware work at c2d088f and reference-label clarification). Per the user's scope change, Phase 6 is the available local RTL work; Phase 7 is manual Vivado acceptance on a borrowed laptop. Dashboard work is deferred. **No physical FPGA deployment is claimed.**
@@ -22,15 +24,15 @@ PYTHONDONTWRITEBYTECODE=1 python3 engine-fpga/run_compiled.py --vectors /private
 PYTHONDONTWRITEBYTECODE=1 MPLCONFIGDIR=/private/tmp/tg-phase6-checks/mpl python3 -m pytest model/tests/ -v --tb=short -p no:cacheprovider
 ```
 
-Full raw outputs (including compiler commands) are retained under [docs/benchmarks/phase6_local](benchmarks/phase6_local/):
+Full raw outputs (including compiler commands) are retained under [docs/benchmarks/phase6_local](../evidence/):
 
-- [Active hashes and frozen vector preparation](benchmarks/phase6_local/active-and-vector-preparation.txt)
-- [Final compiled RTL run](benchmarks/phase6_local/compiled-rtl-run.txt)
-- [MAC, array and fixed arithmetic unit output](benchmarks/phase6_local/integer-unit-checks.txt)
-- [Full pytest output](benchmarks/phase6_local/pytest.txt)
-- [Actual parity JSON](benchmarks/phase6_local/parity.json)
-- [Tool availability](benchmarks/phase6_local/tools.json)
-- [RTL/testbench source hashes](benchmarks/phase6_local/source-hashes.json)
+- [Active hashes and frozen vector preparation](../evidence/active-and-vector-preparation.txt)
+- [Final compiled RTL run](../evidence/compiled-rtl-run.txt)
+- [MAC, array and fixed arithmetic unit output](../evidence/integer-unit-checks.txt)
+- [Full pytest output](../evidence/pytest.txt)
+- [Actual parity JSON](../evidence/parity.json)
+- [Tool availability](../evidence/tools.json)
+- [RTL/testbench source hashes](../evidence/source-hashes.json)
 
 Observed output:
 

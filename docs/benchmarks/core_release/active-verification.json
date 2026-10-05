@@ -1,0 +1,17 @@
+{
+  "mode": "verify-active",
+  "hashes": {
+    "checkpoint_sha256": "c335f7d468c932c3855b190061f452ff2b5b0f3fca8276bf1bff6d674ad13774",
+    "header_sha256": "e1d919a0049e2c492d4ce54168cf9cb223bd90b4b1b74554539089ccf4c60ee8",
+    "preprocessing_sha256": "1339886eaa7cde612b32831057afb225b7d5f314f8ebecdc6f8d57ae99c55c7d"
+  },
+  "preprocessing_hash_format": "canonical JSON SHA-256",
+  "header": "/Users/aryanshukla/Desktop/MAIN/02_Projects/Active/TernaryGuard/model_weights.h",
+  "samples": 69040,
+  "prediction_matches": 69040,
+  "prediction_disagreements": 0,
+  "max_abs_logit_error": 1.1444091796875e-05,
+  "atol": 2e-05,
+  "rtol": 2e-05,
+  "artifacts_rewritten": false
+}

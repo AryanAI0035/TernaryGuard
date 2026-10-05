@@ -9,8 +9,8 @@ import subprocess
 import sys
 import numpy as np
 import pytest
-ROOT=Path(__file__).resolve().parents[2]
-ENGINE=ROOT/'engine-fpga'
+ROOT=next(p for p in Path(__file__).resolve().parents if (p/'model/active_model.json').is_file())
+ENGINE=Path(__file__).resolve().parents[1]
 
 
 def module(name):

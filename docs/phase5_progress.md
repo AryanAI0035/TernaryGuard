@@ -1,3 +1,5 @@
+> Historical phase record: measurements and test counts below describe their recorded acceptance run. The completed core now includes the model, C engine and physically validated Nano; FPGA is optional future scope. See [current project documentation](README.md). Historical budgets do not replace measured Nano resources.
+
 # Phase 5 pre-hardware snapshot
 
 **Superseded by [physical Nano validation](phase5_hardware_validation.md).**
